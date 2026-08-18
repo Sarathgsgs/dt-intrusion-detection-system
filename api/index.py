@@ -11,7 +11,7 @@ import json
 import random
 from fastapi import FastAPI, Query, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import StreamingResponse
+from fastapi.responses import StreamingResponse, HTMLResponse, FileResponse
 
 app = FastAPI(
     title="Twin-Guided Explainable IDS Cloud API",
@@ -93,7 +93,6 @@ ATTACK_SIGNATURES = {
     "Normal": ["tcp.flags.ack", "tcp.ack", "tcp.len"]
 }
 
-# Live Telemetry Simulation Engine
 SAMPLE_ATTACKS = ["Normal", "Normal", "Normal", "DDoS_UDP", "Normal", "SQL_injection", "Normal", "DDoS_TCP", "Normal", "Port_Scanning", "Ransomware"]
 
 class CloudSimulator:
@@ -112,7 +111,6 @@ class CloudSimulator:
         attack_type = random.choice(SAMPLE_ATTACKS)
         is_attack = attack_type != "Normal"
         
-        # Base sensor values
         base_val = 50.0 + random.uniform(-5.0, 5.0)
         actual_val = base_val + (random.uniform(30.0, 90.0) if is_attack else random.uniform(-2.0, 2.0))
         twin_val = base_val + random.uniform(-1.5, 1.5)
@@ -126,7 +124,6 @@ class CloudSimulator:
         sigs = ATTACK_SIGNATURES.get(attack_type, ["tcp.flags", "tcp.len"])
         top_feature = sigs[0] if sigs else "tcp.len"
         
-        # Filter decision
         if not is_attack:
             decision = "NORMAL"
             reason = "Traffic classified as normal baseline behavior."
@@ -205,6 +202,27 @@ class CloudSimulator:
 
 simulator = CloudSimulator()
 
+# Serve root
+@app.get("/")
+def root():
+    # If dist/index.html exists, serve it
+    dist_index = os.path.join(os.path.dirname(__file__), "..", "dashboard", "dist", "index.html")
+    if os.path.exists(dist_index):
+        return FileResponse(dist_index)
+    return {
+        "status": "ONLINE",
+        "system": "Twin-Guided Explainable IDS (X-IDS)",
+        "endpoints": [
+            "/api/health",
+            "/api/benchmarks",
+            "/api/models/comparison",
+            "/api/stats",
+            "/api/stream/step",
+            "/api/stream/sse",
+            "/docs"
+        ]
+    }
+
 @app.get("/api/health")
 def health():
     return {"status": "ONLINE", "cloud": "Vercel Serverless", "timestamp": time.time()}
@@ -238,7 +256,7 @@ def stream_config(delay_ms: int = Query(250), streaming: bool = Query(True)):
 @app.get("/api/stream/sse")
 async def stream_sse(request: Request):
     async def sse_gen():
-        for _ in range(60): # 60 cycles per connection
+        for _ in range(60):
             if await request.is_disconnected():
                 break
             pkt = simulator.generate_packet()

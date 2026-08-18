@@ -10,7 +10,9 @@ import {
   Tooltip, ResponsiveContainer, Cell, Legend, ScatterChart, Scatter, ZAxis
 } from 'recharts';
 
-const API_BASE = "http://127.0.0.1:8000";
+const API_BASE = (typeof window !== 'undefined' && window.location.port === '5173')
+  ? 'http://127.0.0.1:8000'
+  : '';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState('monitor'); // 'monitor' | 'xai' | 'benchmarks' | 'models'
