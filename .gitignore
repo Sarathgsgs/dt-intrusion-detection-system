@@ -24,11 +24,13 @@ wheels/
 .installed.cfg
 *.egg
 
-# Data files (keep samples or generated results as needed)
-data/raw_*.csv
-data/Edge-IIoTset*.csv
+# Large Datasets & Big Model Binaries
+data/Edge-IIoTset*
+data/*.csv
 data/*.zip
-data/ton_iot*.csv
+data/train_test_network*
+models/*.pkl
+models/*.joblib
 
 # Dashboard & Node
 dashboard/node_modules/

@@ -1,0 +1,300 @@
+{
+  "dataset_name": "Edge-IIoTset Sampled",
+  "total_rows": 69993,
+  "total_features": 34,
+  "target_multiclass": "Attack_type",
+  "target_binary": "Attack_label",
+  "classes": {
+    "Normal": 10779,
+    "DDoS_UDP": 6431,
+    "DDoS_ICMP": 6250,
+    "Ransomware": 4846,
+    "DDoS_HTTP": 4684,
+    "SQL_injection": 4573,
+    "Uploading": 4555,
+    "DDoS_TCP": 4545,
+    "Backdoor": 4522,
+    "Vulnerability_scanner": 4469,
+    "Port_Scanning": 4467,
+    "XSS": 4459,
+    "Password": 4431,
+    "MITM": 538,
+    "Fingerprinting": 444
+  },
+  "feature_columns": [
+    "arp.opcode",
+    "arp.hw.size",
+    "icmp.checksum",
+    "icmp.seq_le",
+    "http.content_length",
+    "http.response",
+    "tcp.ack",
+    "tcp.ack_raw",
+    "tcp.checksum",
+    "tcp.connection.fin",
+    "tcp.connection.rst",
+    "tcp.connection.syn",
+    "tcp.connection.synack",
+    "tcp.dstport",
+    "tcp.flags",
+    "tcp.flags.ack",
+    "tcp.len",
+    "tcp.seq",
+    "tcp.srcport",
+    "udp.port",
+    "udp.stream",
+    "udp.time_delta",
+    "dns.qry.name.len",
+    "dns.qry.qu",
+    "dns.retransmission",
+    "dns.retransmit_request",
+    "mqtt.conflag.cleansess",
+    "mqtt.conflags",
+    "mqtt.hdrflags",
+    "mqtt.len",
+    "mqtt.msgtype",
+    "mqtt.proto_len",
+    "mqtt.topic_len",
+    "mqtt.ver"
+  ],
+  "feature_summary": {
+    "arp.opcode": {
+      "dtype": "float64",
+      "min": 0.0,
+      "max": 2.0,
+      "mean": 0.014444301573014445,
+      "std": 0.1516848649336456
+    },
+    "arp.hw.size": {
+      "dtype": "float64",
+      "min": 0.0,
+      "max": 6.0,
+      "mean": 0.06034889203206035,
+      "std": 0.5987123555948395
+    },
+    "icmp.checksum": {
+      "dtype": "float64",
+      "min": 0.0,
+      "max": 65530.0,
+      "mean": 3041.4563027731347,
+      "std": 11135.912149067048
+    },
+    "icmp.seq_le": {
+      "dtype": "float64",
+      "min": 0.0,
+      "max": 65517.0,
+      "mean": 3244.5196233909105,
+      "std": 11404.972598018681
+    },
+    "http.content_length": {
+      "dtype": "float64",
+      "min": 0.0,
+      "max": 83655.0,
+      "mean": 15.234752046633234,
+      "std": 328.6672703768108
+    },
+    "http.response": {
+      "dtype": "float64",
+      "min": 0.0,
+      "max": 1.0,
+      "mean": 0.045675996171045674,
+      "std": 0.20878295506577346
+    },
+    "tcp.ack": {
+      "dtype": "float64",
+      "min": 0.0,
+      "max": 2147250934.0,
+      "mean": 71956681.45378824,
+      "std": 310852321.58686423
+    },
+    "tcp.ack_raw": {
+      "dtype": "float64",
+      "min": 0.0,
+      "max": 4294947151.0,
+      "mean": 1348622186.34392,
+      "std": 1291598129.6810517
+    },
+    "tcp.checksum": {
+      "dtype": "float64",
+      "min": 0.0,
+      "max": 65535.0,
+      "mean": 25850.18226108325,
+      "std": 21543.35391183623
+    },
+    "tcp.connection.fin": {
+      "dtype": "float64",
+      "min": 0.0,
+      "max": 1.0,
+      "mean": 0.05837726629805838,
+      "std": 0.234457131356602
+    },
+    "tcp.connection.rst": {
+      "dtype": "float64",
+      "min": 0.0,
+      "max": 1.0,
+      "mean": 0.09370937093709371,
+      "std": 0.2914260422996017
+    },
+    "tcp.connection.syn": {
+      "dtype": "float64",
+      "min": 0.0,
+      "max": 1.0,
+      "mean": 0.12927006986412928,
+      "std": 0.3355010090528995
+    },
+    "tcp.connection.synack": {
+      "dtype": "float64",
+      "min": 0.0,
+      "max": 1.0,
+      "mean": 0.030117297444030116,
+      "std": 0.17091127281610144
+    },
+    "tcp.dstport": {
+      "dtype": "float64",
+      "min": 0.0,
+      "max": 65535.0,
+      "mean": 17895.247896218192,
+      "std": 24133.08218703722
+    },
+    "tcp.flags": {
+      "dtype": "float64",
+      "min": 0.0,
+      "max": 25.0,
+      "mean": 12.588716014458589,
+      "std": 9.322521611040136
+    },
+    "tcp.flags.ack": {
+      "dtype": "float64",
+      "min": 0.0,
+      "max": 1.0,
+      "mean": 0.6339062477676339,
+      "std": 0.4817389671396969
+    },
+    "tcp.len": {
+      "dtype": "float64",
+      "min": 0.0,
+      "max": 65228.0,
+      "mean": 126.62942008486563,
+      "std": 1238.726296994556
+    },
+    "tcp.seq": {
+      "dtype": "float64",
+      "min": 0.0,
+      "max": 207964705.0,
+      "mean": 1872862.6508704643,
+      "std": 15741087.172867754
+    },
+    "tcp.srcport": {
+      "dtype": "float64",
+      "min": 0.0,
+      "max": 65535.0,
+      "mean": 22228.07953652508,
+      "std": 24397.018949160592
+    },
+    "udp.port": {
+      "dtype": "float64",
+      "min": 0.0,
+      "max": 60310.0,
+      "mean": 9.054419727687055,
+      "std": 660.0590605763228
+    },
+    "udp.stream": {
+      "dtype": "float64",
+      "min": 0.0,
+      "max": 2898725.0,
+      "mean": 121396.2742131356,
+      "std": 469332.4441437253
+    },
+    "udp.time_delta": {
+      "dtype": "float64",
+      "min": 0.0,
+      "max": 502.0,
+      "mean": 0.3421913619933422,
+      "std": 9.848990663025571
+    },
+    "dns.qry.name.len": {
+      "dtype": "float64",
+      "min": 0.0,
+      "max": 1.0,
+      "mean": 0.0013287042990013287,
+      "std": 0.036427432002860444
+    },
+    "dns.qry.qu": {
+      "dtype": "float64",
+      "min": 0.0,
+      "max": 1028.0,
+      "mean": 0.6458217250296459,
+      "std": 20.011489413488675
+    },
+    "dns.retransmission": {
+      "dtype": "float64",
+      "min": 0.0,
+      "max": 28.0,
+      "mean": 0.0015287243010015288,
+      "std": 0.18925126739856757
+    },
+    "dns.retransmit_request": {
+      "dtype": "float64",
+      "min": 0.0,
+      "max": 0.0,
+      "mean": 0.0,
+      "std": 0.0
+    },
+    "mqtt.conflag.cleansess": {
+      "dtype": "float64",
+      "min": 0.0,
+      "max": 1.0,
+      "mean": 0.007572185790007572,
+      "std": 0.08668884103278914
+    },
+    "mqtt.conflags": {
+      "dtype": "float64",
+      "min": 0.0,
+      "max": 2.0,
+      "mean": 0.015144371580015144,
+      "std": 0.17337768206557827
+    },
+    "mqtt.hdrflags": {
+      "dtype": "float64",
+      "min": 0.0,
+      "max": 224.0,
+      "mean": 2.6754675467546756,
+      "std": 21.298043538112314
+    },
+    "mqtt.len": {
+      "dtype": "float64",
+      "min": 0.0,
+      "max": 39.0,
+      "mean": 0.40846941837040845,
+      "std": 3.56833239022129
+    },
+    "mqtt.msgtype": {
+      "dtype": "float64",
+      "min": 0.0,
+      "max": 14.0,
+      "mean": 0.16721672167216722,
+      "std": 1.3311277211320196
+    },
+    "mqtt.proto_len": {
+      "dtype": "float64",
+      "min": 0.0,
+      "max": 4.0,
+      "mean": 0.030288743160030288,
+      "std": 0.34675536413115654
+    },
+    "mqtt.topic_len": {
+      "dtype": "float64",
+      "min": 0.0,
+      "max": 24.0,
+      "mean": 0.18584715614418584,
+      "std": 2.1037718067434272
+    },
+    "mqtt.ver": {
+      "dtype": "float64",
+      "min": 0.0,
+      "max": 4.0,
+      "mean": 0.030288743160030288,
+      "std": 0.34675536413115654
+    }
+  }
+}

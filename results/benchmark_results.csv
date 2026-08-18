@@ -1,0 +1,5 @@
+Configuration,Feature Space,Accuracy (%),Macro-F1,Avg Latency (ms/sample),Throughput (samples/sec),Total Footprint (KB)
+Config 1: Full-Precision Twin + Heavy RF (150 trees),Twin-Augmented,92.96,0.8927,0.43,2326.5,18134.8
+Config 2: Quantized Twin + Standard RF (100 trees),Twin-Augmented,91.64,0.8786,0.176,5680.4,7291.0
+Config 3: Quantized Twin + Pruned Edge RF (30 trees),Twin-Augmented,84.98,0.8041,0.152,6587.5,571.7
+"Config 4: Fast-Inference Edge XGBoost (25 trees, Depth 4)",Raw Telemetry,91.81,0.8871,0.005,204592.7,105.9
