@@ -1,0 +1,2 @@
+Source Dataset (Trained),Target Dataset (Unseen),Sample Count,Transfer Accuracy (%),Transfer F1-Score,Transfer Precision,Transfer Recall
+Edge-IIoTset,TON_IoT,50000,64.99,0.7878,1.0,0.6499
