@@ -1,7 +1,7 @@
-Model Architecture,Accuracy (%),Macro-F1,Weighted-F1,Macro-Precision,Macro-Recall
-RF-Raw (Baseline),94.24,0.9016,0.945,0.8907,0.9341
-XGB-Raw (Baseline),95.0,0.92,0.9522,0.9215,0.9378
-RF-Deviation (Pure),41.61,0.3934,0.4154,0.3935,0.4174
-XGB-Deviation (Pure),47.12,0.4303,0.4448,0.5839,0.3993
-RF-Twin-Augmented,90.6,0.8742,0.9091,0.8732,0.8947
-XGB-Twin-Augmented,94.75,0.9145,0.9485,0.9183,0.9175
+Model Architecture,Feature Space,Accuracy (%),Macro-F1,Weighted-F1,Macro-Precision,Macro-Recall,Train Time (s),Inference Latency (ms/sample)
+RF-Raw (Baseline),Raw Telemetry (34 features),94.77,0.9177,0.9499,0.9185,0.9354,2.79,0.0125
+XGB-Raw (Baseline),Raw Telemetry (34 features),95.0,0.92,0.9522,0.9215,0.9378,10.31,0.0114
+RF-Deviation (Pure Cont Residuals),Continuous Residuals (9 features),39.49,0.3176,0.3394,0.4881,0.3114,13.52,0.0181
+XGB-Deviation (Pure Cont Residuals),Continuous Residuals (9 features),39.6,0.3119,0.333,0.4996,0.3091,8.99,0.013
+RF-Twin-Augmented-v2 (Targeted),Raw + Continuous Residuals (43 features),93.8,0.9038,0.939,0.907,0.906,7.22,0.0129
+XGB-Twin-Augmented-v2 (Targeted),Raw + Continuous Residuals (43 features),94.81,0.9144,0.9489,0.919,0.9149,14.34,0.0116

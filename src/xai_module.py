@@ -1,131 +1,121 @@
 """
-Milestone 6: SHAP Explainability Module (XAI)
-Provides local feature attribution and global explainability for IDS detections using TreeExplainer.
+Phase B / Milestone 6: SHAP Local & Global Explainability Module
+Calculates exact Shapley additive feature attributions for Twin-Augmented-v2 model.
 """
 
 import os
 import sys
 import joblib
+import shap
 import numpy as np
 import pandas as pd
-import shap
 import matplotlib.pyplot as plt
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
-class ExplainabilityModule:
-    def __init__(self, model_path: str = "models/xgb_raw.pkl", feature_names_path: str = "models/raw_features.pkl", label_encoder_path: str = "models/label_encoder.pkl"):
+class XAIExplainer:
+    def __init__(self, model_path: str = "models/xgb_fused.pkl", model_dir: str = "models"):
         self.model = joblib.load(model_path)
-        self.feature_names = joblib.load(feature_names_path)
-        self.label_encoder = joblib.load(label_encoder_path)
-        print("Initializing SHAP TreeExplainer...")
+        self.label_encoder = joblib.load(os.path.join(model_dir, "label_encoder.pkl"))
+        self.fused_features = joblib.load(os.path.join(model_dir, "fused_features.pkl"))
         self.explainer = shap.TreeExplainer(self.model)
         
     def explain_sample(self, feature_vector: np.ndarray, top_k: int = 5) -> dict:
         """
-        Computes local SHAP attribution for a single sample.
+        Computes local SHAP attributions for a single telemetry sample.
         """
         if feature_vector.ndim == 1:
             feature_vector = feature_vector.reshape(1, -1)
             
-        # Prediction
-        probs = self.model.predict_proba(feature_vector)[0]
-        pred_class_idx = int(np.argmax(probs))
+        prob_dist = self.model.predict_proba(feature_vector)[0]
+        pred_class_idx = int(np.argmax(prob_dist))
         pred_class_name = self.label_encoder.inverse_transform([pred_class_idx])[0]
-        confidence = float(probs[pred_class_idx])
+        confidence = float(prob_dist[pred_class_idx])
         
-        # SHAP values
         shap_values = self.explainer.shap_values(feature_vector)
         
-        # Handle multiclass vs binary shap output format
         if isinstance(shap_values, list):
-            # List of arrays per class
             class_shap = shap_values[pred_class_idx][0]
         elif shap_values.ndim == 3:
-            # Array of shape (n_samples, n_features, n_classes)
             class_shap = shap_values[0, :, pred_class_idx]
         else:
             class_shap = shap_values[0]
             
-        # Sort top features by absolute magnitude
-        top_indices = np.argsort(np.abs(class_shap))[::-1][:top_k]
+        sorted_indices = np.argsort(np.abs(class_shap))[::-1][:top_k]
         
-        top_features = []
-        for idx in top_indices:
-            top_features.append({
-                "feature": self.feature_names[idx],
-                "feature_value": float(feature_vector[0, idx]),
-                "shap_value": float(class_shap[idx]),
-                "contribution": "Increases Risk" if class_shap[idx] > 0 else "Decreases Risk"
+        top_attributions = []
+        for idx in sorted_indices:
+            feat_name = self.fused_features[idx]
+            val = float(feature_vector[0, idx])
+            sv = float(class_shap[idx])
+            top_attributions.append({
+                "feature": feat_name,
+                "feature_value": round(val, 4),
+                "shap_value": round(sv, 4),
+                "contribution": "Increases Risk" if sv > 0 else "Decreases Risk"
             })
             
-        explanation = {
+        return {
             "predicted_class": pred_class_name,
-            "predicted_class_idx": pred_class_idx,
-            "confidence": confidence,
-            "top_features": top_features
+            "confidence": round(confidence, 4),
+            "top_features": top_attributions
         }
-        return explanation
-        
-    def generate_global_summary(self, X_sample: np.ndarray, output_path: str = "results/shap_summary.png"):
-        print(f"Generating global SHAP summary plot on {len(X_sample)} samples...")
-        shap_values = self.explainer.shap_values(X_sample)
-        
-        plt.figure(figsize=(12, 8))
-        if isinstance(shap_values, list):
-            # Multiclass bar summary
-            shap.summary_plot(
-                shap_values, 
-                X_sample, 
-                feature_names=self.feature_names, 
-                class_names=list(self.label_encoder.classes_),
-                show=False, 
-                max_display=12
-            )
-        elif shap_values.ndim == 3:
-            # For 3D array, average across classes or plot primary
-            shap.summary_plot(
-                shap_values[:, :, 0], 
-                X_sample, 
-                feature_names=self.feature_names, 
-                show=False, 
-                max_display=12
-            )
-        else:
-            shap.summary_plot(
-                shap_values, 
-                X_sample, 
-                feature_names=self.feature_names, 
-                show=False, 
-                max_display=12
-            )
-            
-        plt.title('Global SHAP Feature Importance across IIoT Attack Types', fontweight='bold', fontsize=13)
-        plt.tight_layout()
-        os.makedirs(os.path.dirname(output_path), exist_ok=True)
-        plt.savefig(output_path, dpi=300, bbox_inches='tight')
-        plt.close()
-        print(f"[SUCCESS] Saved SHAP summary plot to: {output_path}")
 
-def run_xai_demo():
-    xai = ExplainabilityModule("models/xgb_raw.pkl", "models/raw_features.pkl", "models/label_encoder.pkl")
+def generate_global_shap_summary(
+    dev_csv: str = "data/deviation_dataset.csv",
+    output_plot_path: str = "results/shap_summary.png",
+    model_dir: str = "models",
+    n_samples: int = 500
+):
+    print("=" * 70)
+    print("  SHAP GLOBAL ATTRIBUTION SUMMARY (PHASE B / TWIN-AUGMENTED-V2)")
+    print("=" * 70)
     
-    # Load sample test data
-    df = pd.read_csv("data/sampled_dataset.csv")
-    feature_cols = joblib.load("models/raw_features.pkl")
-    X = df[feature_cols].values
+    df = pd.read_csv(dev_csv)
+    raw_cols = joblib.load(os.path.join(model_dir, "raw_features.pkl"))
+    dev_cols = joblib.load(os.path.join(model_dir, "dev_features.pkl"))
+    fused_cols = list(raw_cols) + list(dev_cols)
     
-    # Single sample explanation
-    sample_idx = 42
-    print(f"\nExplaining sample index {sample_idx} (Ground truth: {df.iloc[sample_idx]['Attack_type']}):")
-    exp = xai.explain_sample(X[sample_idx])
-    print(f"Predicted Class: {exp['predicted_class']} (Confidence: {exp['confidence']*100:.2f}%)")
-    print("Top Influential Features:")
-    for f in exp["top_features"]:
-        print(f"  - {f['feature']:<22} = {f['feature_value']:<10.2f} (SHAP: {f['shap_value']:+.4f}) -> {f['contribution']}")
+    sample_df = df.sample(n=min(n_samples, len(df)), random_state=42)
+    X_sample = sample_df[fused_cols].values
+    
+    model = joblib.load(os.path.join(model_dir, "xgb_fused.pkl"))
+    explainer = shap.TreeExplainer(model)
+    
+    print(f"Computing TreeExplainer SHAP values for {X_sample.shape[0]} samples across {X_sample.shape[1]} features...")
+    shap_vals = explainer.shap_values(X_sample)
+    
+    if isinstance(shap_vals, list):
+        mean_abs_shap = np.mean([np.abs(sv) for sv in shap_vals], axis=0).mean(axis=0)
+    elif shap_vals.ndim == 3:
+        mean_abs_shap = np.abs(shap_vals).mean(axis=(0, 2))
+    else:
+        mean_abs_shap = np.abs(shap_vals).mean(axis=0)
         
-    # Global summary
-    xai.generate_global_summary(X[:300], "results/shap_summary.png")
+    top_indices = np.argsort(mean_abs_shap)[::-1][:12]
+    top_features = [fused_cols[i] for i in top_indices]
+    top_scores = mean_abs_shap[top_indices]
+    
+    plt.figure(figsize=(12, 6))
+    colors = ['#38bdf8' if f.startswith('dev_') else '#6366f1' for f in reversed(top_features)]
+    
+    plt.barh(list(reversed(top_features)), list(reversed(top_scores)), color=colors)
+    plt.xlabel('Mean |SHAP Value| (Average Impact on Threat Classification)', fontweight='bold')
+    plt.title('Global Feature Importance Ranking: Raw Features vs. Continuous Deviation Signals', fontweight='bold', fontsize=12)
+    
+    from matplotlib.patches import Patch
+    legend_elements = [
+        Patch(facecolor='#6366f1', label='Raw Telemetry Feature'),
+        Patch(facecolor='#38bdf8', label='Continuous Physical Deviation (Twin Residual)')
+    ]
+    plt.legend(handles=legend_elements, loc='lower right')
+    plt.grid(axis='x', linestyle=':', alpha=0.6)
+    
+    plt.tight_layout()
+    os.makedirs(os.path.dirname(output_plot_path), exist_ok=True)
+    plt.savefig(output_plot_path, dpi=300)
+    plt.close()
+    print(f"[SUCCESS] Saved global SHAP summary plot to: {output_plot_path}")
 
 if __name__ == "__main__":
-    run_xai_demo()
+    generate_global_shap_summary()

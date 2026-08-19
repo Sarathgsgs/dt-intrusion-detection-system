@@ -1,7 +1,7 @@
 """
-Milestone 4: Deviation Engine Module
-Computes residual deviation vectors |actual - predicted| between real IoT telemetry
-and Digital Twin baseline forecasts.
+Phase B / Milestone 4: Targeted Deviation Residual Engine
+Computes absolute residual vectors strictly between incoming continuous telemetry
+and the Scope-Restricted Digital Twin forecast: e_t = |y_t - y_hat_t|.
 """
 
 import os
@@ -12,113 +12,113 @@ import pandas as pd
 import matplotlib.pyplot as plt
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
-
-try:
-    from src.twin_model import DigitalTwin
-except ImportError:
-    from twin_model import DigitalTwin
+from src.twin_model import DigitalTwin, CONTINUOUS_FEATURES
 
 class DeviationEngine:
-    def __init__(self, model_dir: str = "models"):
-        self.model_dir = model_dir
-        self.twin = DigitalTwin.load(model_dir)
-        self.feature_names = self.twin.feature_names
+    def __init__(self, twin: DigitalTwin = None, model_dir: str = "models"):
+        if twin is not None:
+            self.twin = twin
+        else:
+            self.twin = DigitalTwin.load(model_dir)
+        self.continuous_features = self.twin.feature_names
+        self.dev_feature_names = [f"dev_{col}" for col in self.continuous_features]
         
     def compute_deviations(self, df: pd.DataFrame) -> pd.DataFrame:
         """
-        Calculates deviation vector = |actual - predicted| for each feature.
+        Computes continuous deviation residuals across the dataframe.
         """
-        raw_features = df[self.feature_names].values
-        predicted_features = self.twin.compute_dataset_predictions(df)
+        print(f"Computing Digital Twin forecasts for {len(df)} samples across {len(self.continuous_features)} continuous signals...")
+        actual_continuous = df[self.continuous_features].values
+        predicted_continuous = self.twin.compute_dataset_predictions(df)
         
         # Absolute residuals
-        deviations = np.abs(raw_features - predicted_features)
+        residuals = np.abs(actual_continuous - predicted_continuous)
         
-        # Create deviation DataFrame
-        dev_cols = [f"dev_{col}" for col in self.feature_names]
-        dev_df = pd.DataFrame(deviations, columns=dev_cols, index=df.index)
+        dev_df = pd.DataFrame(residuals, columns=self.dev_feature_names, index=df.index)
+        dev_df["mean_deviation"] = residuals.mean(axis=1)
+        dev_df["max_deviation"] = residuals.max(axis=1)
         
-        # Carry over labels if present
-        if "Attack_type" in df.columns:
-            dev_df["Attack_type"] = df["Attack_type"]
-        if "Attack_label" in df.columns:
-            dev_df["Attack_label"] = df["Attack_label"]
-            
         return dev_df
-
-    def compute_single_deviation(self, sequence_window: np.ndarray, current_reading: np.ndarray) -> np.ndarray:
+        
+    def compute_single_deviation(self, window_df: pd.DataFrame, current_record: dict) -> dict:
         """
-        Real-time single-step deviation calculation for live stream / API inference.
+        Real-time single-step deviation calculation for live streaming.
         """
-        predicted = self.twin.predict_next_state(sequence_window)
-        deviation = np.abs(current_reading - predicted)
-        return deviation
+        window_raw = window_df[self.continuous_features].values
+        pred_continuous = self.twin.predict_next_state(window_raw)
+        
+        actual_continuous = np.array([float(current_record[f]) for f in self.continuous_features])
+        residuals = np.abs(actual_continuous - pred_continuous)
+        
+        dev_dict = {f"dev_{f}": float(r) for f, r in zip(self.continuous_features, residuals)}
+        dev_dict["mean_deviation"] = float(residuals.mean())
+        dev_dict["max_deviation"] = float(residuals.max())
+        
+        predicted_state_dict = {f: float(p) for f, p in zip(self.continuous_features, pred_continuous)}
+        return dev_dict, predicted_state_dict
 
-
-def run_deviation_pipeline(
-    input_csv: str = "data/sampled_dataset.csv",
-    output_csv: str = "data/deviation_dataset.csv",
-    output_plot: str = "results/deviation_separation.png"
+def process_and_save_deviation_dataset(
+    sampled_csv: str = "data/sampled_dataset.csv",
+    output_dev_csv: str = "data/deviation_dataset.csv",
+    output_plot_path: str = "results/deviation_separation.png",
+    model_dir: str = "models"
 ):
-    print(f"Loading dataset from: {input_csv}")
-    df = pd.read_csv(input_csv)
+    print("=" * 70)
+    print("  TARGETED DEVIATION RESIDUAL GENERATION (PHASE B / TWIN-AUGMENTED-V2)")
+    print("=" * 70)
     
-    print("Initializing Deviation Engine with trained Digital Twin...")
-    engine = DeviationEngine("models")
+    df = pd.read_csv(sampled_csv)
+    engine = DeviationEngine(model_dir=model_dir)
     
-    print("Computing feature-wise deviations across full dataset...")
     dev_df = engine.compute_deviations(df)
     
-    # Save deviation dataset
-    os.makedirs(os.path.dirname(output_csv), exist_ok=True)
-    dev_df.to_csv(output_csv, index=False)
-    file_size_mb = os.path.getsize(output_csv) / (1024 * 1024)
-    print(f"[SUCCESS] Saved deviation dataset to: {output_csv} ({file_size_mb:.2f} MB, {len(dev_df)} rows)")
+    # Save dev feature names and fused feature names
+    raw_features = joblib.load(os.path.join(model_dir, "raw_features.pkl"))
+    dev_features = engine.dev_feature_names
+    fused_features = list(raw_features) + list(dev_features)
     
-    # Statistical analysis & Separation plot
-    print("Analyzing normal vs attack deviation separation...")
-    dev_cols = [c for c in dev_df.columns if c.startswith("dev_")]
-    dev_df["mean_deviation_magnitude"] = dev_df[dev_cols].mean(axis=1)
+    joblib.dump(dev_features, os.path.join(model_dir, "dev_features.pkl"))
+    joblib.dump(fused_features, os.path.join(model_dir, "fused_features.pkl"))
     
-    normal_mag = dev_df[dev_df["Attack_type"] == "Normal"]["mean_deviation_magnitude"]
-    attack_mag = dev_df[dev_df["Attack_type"] != "Normal"]["mean_deviation_magnitude"]
+    # Save complete targeted deviation dataset
+    output_df = pd.concat([df, dev_df], axis=1)
+    os.makedirs(os.path.dirname(output_dev_csv), exist_ok=True)
+    output_df.to_csv(output_dev_csv, index=False)
+    print(f"[SUCCESS] Exported Targeted Deviation Dataset: {output_dev_csv} ({output_df.shape[0]} rows, {output_df.shape[1]} cols)")
     
-    print(f"Normal Mean Deviation Magnitude: {normal_mag.mean():.4f} (std: {normal_mag.std():.4f})")
-    print(f"Attack Mean Deviation Magnitude: {attack_mag.mean():.4f} (std: {attack_mag.std():.4f})")
+    # Statistical Separation Plot
+    print("Generating targeted deviation separation analysis plot...")
+    plt.figure(figsize=(14, 5))
     
-    # Plot separation
-    plt.figure(figsize=(12, 5))
+    normal_devs = output_df[output_df["Attack_label"] == 0]["mean_deviation"].values
+    attack_devs = output_df[output_df["Attack_label"] == 1]["mean_deviation"].values
     
+    # Subplot 1: Boxplot comparison
     plt.subplot(1, 2, 1)
-    try:
-        plt.boxplot([normal_mag, attack_mag], tick_labels=['Normal Traffic', 'Attack Traffic'], patch_artist=True,
-                    boxprops=dict(facecolor='#93c5fd', color='#1e40af'),
-                    medianprops=dict(color='#dc2626', lw=2))
-    except TypeError:
-        plt.boxplot([normal_mag, attack_mag], labels=['Normal Traffic', 'Attack Traffic'], patch_artist=True,
-                    boxprops=dict(facecolor='#93c5fd', color='#1e40af'),
-                    medianprops=dict(color='#dc2626', lw=2))
-    plt.yscale('log')
-    plt.title('Log Deviation Magnitude Distribution', fontweight='bold')
-    plt.ylabel('Mean Feature Deviation |y - y_hat| (log scale)')
+    box_data = [np.log1p(normal_devs), np.log1p(attack_devs)]
+    plt.boxplot(box_data, tick_labels=['Normal Baseline', 'Attack Telemetry'], patch_artist=True,
+                boxprops=dict(facecolor='#38bdf8', color='#0284c7'),
+                medianprops=dict(color='#dc2626', lw=2))
+    plt.ylabel('Log(1 + Mean Physical Residual)', fontweight='bold')
+    plt.title('Targeted Residual Separation (Log Scale)', fontweight='bold', fontsize=11)
     plt.grid(True, linestyle=':', alpha=0.6)
     
+    # Subplot 2: Per-attack category mean residual bar chart
     plt.subplot(1, 2, 2)
-    plt.hist(np.log1p(normal_mag), bins=40, alpha=0.6, label='Normal (Healthy)', color='#10b981', density=True)
-    plt.hist(np.log1p(attack_mag), bins=40, alpha=0.6, label='Attacks (Intrusions)', color='#ef4444', density=True)
-    plt.title('Separation Density: Normal vs Intrusions', fontweight='bold')
-    plt.xlabel('log(1 + Deviation Magnitude)')
-    plt.ylabel('Probability Density')
-    plt.legend()
-    plt.grid(True, linestyle=':', alpha=0.6)
+    attack_means = output_df.groupby('Attack_type')['mean_deviation'].mean().sort_values(ascending=True)
+    colors = ['#10b981' if k == 'Normal' else '#f59e0b' for k in attack_means.index]
+    plt.barh(attack_means.index, attack_means.values, color=colors)
+    plt.xlabel('Mean Continuous Physical Deviation', fontweight='bold')
+    plt.title('Physical Signal Deviation Across Attack Categories', fontweight='bold', fontsize=11)
+    plt.grid(axis='x', linestyle=':', alpha=0.6)
     
     plt.tight_layout()
-    os.makedirs(os.path.dirname(output_plot), exist_ok=True)
-    plt.savefig(output_plot, dpi=300)
+    os.makedirs(os.path.dirname(output_plot_path), exist_ok=True)
+    plt.savefig(output_plot_path, dpi=300)
     plt.close()
-    print(f"[SUCCESS] Saved separation plot to: {output_plot}")
+    print(f"[SUCCESS] Saved targeted deviation separation plot to: {output_plot_path}")
     
-    return dev_df
+    return output_df
 
 if __name__ == "__main__":
-    run_deviation_pipeline()
+    process_and_save_deviation_dataset()
