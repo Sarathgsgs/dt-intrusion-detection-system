@@ -443,7 +443,7 @@ export default function App() {
                       </span>
                     </div>
                     <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-                      Blue: Actual Ingested Telemetry ($y_t$) • Amber: Digital Twin Baseline Forecast ($\hat{y}_t$) • Deviation: $|y_t - \hat{y}_t|$
+                      Blue: Actual Ingested Telemetry (y_t) • Amber: Digital Twin Healthy Forecast (ŷ_t) • Residual: |y_t - ŷ_t|
                     </p>
                   </div>
                   <span style={{
