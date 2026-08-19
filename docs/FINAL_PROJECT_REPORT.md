@@ -1,104 +1,77 @@
-# Final Technical Project Report
-# Twin-Guided Explainable Intrusion Detection System (X-IDS): A Resource-Aware Trade-off Analysis for Industrial IoT
+# Comprehensive Final Project Report: Twin-Guided Explainable Intrusion Detection System (X-IDS)
+## A Resource-Aware Trade-Off Analysis for Industrial IoT
 
-**Project Repository:** https://github.com/Sarathgsgs/dt-intrusion-detection-system.git  
-**Technology Stack:** Python 3.10–3.14, Scikit-Learn, XGBoost, SHAP, FastAPI, Uvicorn, React, Vite, Recharts  
-
----
-
-## Executive Summary
-This document serves as the comprehensive final technical report for the **Twin-Guided Explainable Intrusion Detection System (X-IDS)** project. The project addresses the critical challenge of securing resource-constrained Industrial Internet of Things (IIoT) edge devices against modern cyber threats while providing sub-millisecond latency, explainable AI diagnostics (SHAP), and automated false-positive alert suppression.
-
----
-
-## Table of Contents
-1. **Chapter 1: Introduction & Problem Statement**
-2. **Chapter 2: Literature Survey & Background**
-3. **Chapter 3: System Architecture & Theoretical Framework**
-4. **Chapter 4: Implementation Details & Code Organization**
-5. **Chapter 5: Experimental Evaluation & Benchmark Results**
-6. **Chapter 6: Operational Explainability & Confidence Filtering**
-7. **Chapter 7: Interactive Dashboard & Demonstration Guide**
-8. **Chapter 8: Conclusion & Future Enhancements**
+**Project Repository:** [https://github.com/Sarathgsgs/dt-intrusion-detection-system.git](https://github.com/Sarathgsgs/dt-intrusion-detection-system.git)  
+**Status:** Post-Revision Final Report (Phases A–F Complete)
 
 ---
 
 ## Chapter 1: Introduction & Problem Statement
-Industrial IoT systems monitor and control mission-critical physical processes (e.g. chemical reactors, power grids, robotic fabrication). Deploying enterprise IDS models on edge devices faces four core bottlenecks:
-- **Compute & Memory Overhead:** Deep networks exceed 512MB RAM and overwhelm low-power CPUs.
-- **Latency Vulnerability:** Inference delays above 1 ms disrupt industrial control loop synchronization.
-- **Alert Fatigue:** SOC teams ignore alerts due to high false-alarm rates from noisy sensor fluctuations.
-- **Opacity:** Operators cannot safely execute incident responses without transparent reasoning.
+Industrial Internet of Things (IIoT) systems underpin modern manufacturing, energy grids, and smart infrastructure. However, deploying machine learning-based Intrusion Detection Systems (IDS) directly on edge devices introduces three fundamental challenges:
+1. **Black-Box Opacity:** Statistical classifiers provide raw class predictions without physical causal grounding.
+2. **Computational Constraints:** Resource-limited microcontrollers and edge gateways cannot support heavyweight deep learning models.
+3. **Alert Fatigue:** SOC operators are overwhelmed by high volumes of ambiguous, low-confidence false positives.
+
+To resolve these challenges, this project develops and benchmarks **X-IDS** (Twin-Guided Explainable IDS), pairing a scope-restricted neural sequence Digital Twin with targeted residual engineering, SHAP explainability, and an operational confidence filter.
 
 ---
 
-## Chapter 2: Literature Survey
-| Study / System | Focus Area | Strengths | Critical Limitations |
-|---|---|---|---|
-| Ferrag et al. (2022) | Edge-IIoTset Evaluation | Deep ML benchmark across 14 attacks | High memory footprint; no edge latency trade-off analysis |
-| Alsaedi et al. (2020) | TON_IoT Testbed | Multi-protocol IoT telemetry | Black-box classifiers; no localized explainability |
-| Lundberg et al. (2017) | SHAP (TreeExplainer) | Exact local feature attribution | Used purely for visualization, not operational filtering |
-| **Our Approach (X-IDS)** | **Twin-Guided Edge IDS** | **Digital Twin Residuals + Operational XAI + Edge Benchmarking** | **Designed explicitly for sub-millisecond edge gateways** |
-
----
-
-## Chapter 3: System Architecture
+## Chapter 2: System Architecture & Design
+The X-IDS pipeline executes through six tightly integrated stages:
 
 ```
-                               ┌─────────────────────────────┐
-                               │   Raw IIoT Telemetry Stream  │
-                               └──────────────┬──────────────┘
-                                              │
-                       ┌──────────────────────┴──────────────────────┐
-                       ▼                                             ▼
-        ┌─────────────────────────────┐               ┌─────────────────────────────┐
-        │  Digital Twin Forecaster    │               │  Actual Ingestion Vector    │
-        │  (Trained on Normal Only)   │               │            y_t              │
-        └──────────────┬──────────────┘               └──────────────┬──────────────┘
-                       │ ŷ_t (Expected Normal)                       │
-                       └──────────────────────┬──────────────────────┘
-                                              ▼
-                               ┌─────────────────────────────┐
-                               │       Deviation Engine      │
-                               │      e_t = |y_t - ŷ_t|      │
-                               └──────────────┬──────────────┘
-                                              │
-                                              ▼
-                               ┌─────────────────────────────┐
-                               │ Twin-Augmented IDS Model    │
-                               │      z_t = [y_t || e_t]     │
-                               └──────────────┬──────────────┘
-                                              │
-                       ┌──────────────────────┴──────────────────────┐
-                       ▼                                             ▼
-        ┌─────────────────────────────┐               ┌─────────────────────────────┐
-        │  IDS Class & Confidence     │               │   SHAP Feature Attributions  │
-        │    P(c | z_t), confidence   │               │          phi_j              │
-        └──────────────┬──────────────┘               └──────────────┬──────────────┘
-                       │                                             │
-                       └──────────────────────┬──────────────────────┘
-                                              ▼
-                               ┌─────────────────────────────┐
-                               │ Operational Confidence Filter│
-                               │  (Signature & Conf Bounds)  │
-                               └──────────────┬──────────────┘
-                                              │
-                              ┌───────────────┴───────────────┐
-                              ▼                               ▼
-               ┌─────────────────────────────┐ ┌─────────────────────────────┐
-               │    High-Fidelity Alert      │ │    Suppressed Noise Alert   │
-               │   (Actionable to SOC)       │ │  (Filtered False Positive)  │
-               └─────────────────────────────┘ └─────────────────────────────┘
+[ Edge-IIoTset Ingestion ] (34 Raw Features)
+           │
+           ├──────────────────────────────┬──────────────────────────────┐
+           ▼                                                             ▼
+[ 9 Continuous Physical Features ]                        [ 25 Discrete Protocol States ]
+           │                                                (Ports, Flags, Protocols)
+           ▼                                                             │
+[ Scope-Restricted Digital Twin ] (MLP/LSTM, W=5)                        │
+  (Trained on 10,779 Normal-Only Samples)                                │
+           │                                                             │
+           ▼ ŷ_t                                                         │
+[ Targeted Deviation Engine ]                                            │
+  e_t = |y_t - ŷ_t| (9 Continuous Residuals)                             │
+           │                                                             │
+           └──────────────────────────────┬──────────────────────────────┘
+                                          ▼
+                      [ Twin-Augmented-v2 Feature Space ]
+                      (25 Categorical + 9 Continuous + 9 Deviation = 43 Features)
+                                          │
+                                          ▼
+                      [ Multi-Class IDS Classifiers ]
+                           (Random Forest / XGBoost)
+                                          │
+                          ┌───────────────┴───────────────┐
+                          ▼                               ▼
+                [ Prediction & Confidence ]      [ SHAP TreeExplainer ]
+                          │                               │
+                          └───────────────┬───────────────┘
+                                          ▼
+                          [ Operational Confidence Filter ]
+                            (Signature Match + γ Bounds)
+                                          │
+                        ┌─────────────────┴─────────────────┐
+                        ▼                                   ▼
+            [ High-Fidelity Alert ]                [ Suppressed Noise ]
 ```
 
 ---
 
-## Chapter 4: Implementation Details & Code Organization
+## Chapter 3: Data Preprocessing & Telemetry Simulation
+- **Dataset:** Edge-IIoTset (157,800 raw rows, 63 features) cleaned and downsampled via stratified sampling to **69,993 rows / 34 features** (`data/sampled_dataset.csv`, 11.24 MB).
+- **Leakage Prevention:** Dropped non-generalizable timestamps, IP addresses, MAC addresses, and constant variance columns.
+- **Simulator:** Generator yielding telemetry records with Fast Batch mode (2,938 rec/s) and Live Streaming mode (50–1000 ms configurable delay).
 
+---
+
+## Chapter 4: Codebase & Directory Structure
 ```
-e:\Projects\digital twin\
+dt-intrusion-detection-system/
 ├── data/
 │   ├── sampled_dataset.csv       # Preprocessed & stratified dataset (~70k rows, 11.2 MB)
+│   ├── deviation_dataset.csv     # Targeted Twin-Augmented-v2 dataset (43 features)
 │   ├── data_dictionary.json      # Column statistics and types
 │   └── train_test_network.csv    # Unseen TON_IoT generalization dataset
 ├── notebooks/
@@ -106,14 +79,14 @@ e:\Projects\digital twin\
 ├── src/
 │   ├── __init__.py
 │   ├── preprocess.py             # Data cleaning, encoding, and stratified downsampling
-│   ├── simulator.py              # Telemetry replay stream generator (2,938 rec/sec)
-│   ├── twin_model.py             # Digital Twin sequence forecaster (MLP/LSTM)
-│   ├── deviation_engine.py       # Multidimensional residual vector calculator
-│   ├── ids_model.py              # 6-Model IDS evaluation suite (RF, XGBoost)
+│   ├── simulator.py              # Telemetry replay stream generator
+│   ├── twin_model.py             # Scope-Restricted Digital Twin sequence forecaster
+│   ├── deviation_engine.py       # Targeted continuous residual calculator
+│   ├── ids_model.py              # Multi-class IDS evaluation suite (RF, XGBoost)
 │   ├── xai_module.py             # SHAP TreeExplainer local & global attribution
 │   ├── confidence_filter.py      # Domain attack signature validation engine
 │   ├── edge_benchmark.py         # Multi-config latency, RAM, and footprint benchmark
-│   ├── generalization_eval.py    # Zero-shot cross-dataset evaluation
+│   ├── generalization_eval.py    # Dual-model zero-shot cross-dataset evaluation
 │   └── api_server.py             # FastAPI backend with SSE stream
 ├── models/                       # Serialized model binaries (.pkl, .joblib)
 ├── results/                      # Master CSV results & publication charts
@@ -126,25 +99,35 @@ e:\Projects\digital twin\
 ## Chapter 5: Experimental Evaluation & Benchmark Results
 
 ### 1. IDS Model Performance Across Feature Spaces
-- **Baseline XGBoost on Raw Data:** **95.00% Accuracy**, **0.9200 Macro-F1**, **0.9522 Weighted-F1**.
-- **Proposed XGBoost on Twin-Augmented Data:** **94.75% Accuracy**, **0.9145 Macro-F1**, **0.9485 Weighted-F1**.
-- **Pure Deviation Features:** Demonstrates anomaly separation with **47.12% Accuracy** and **0.5839 Macro-Precision**.
 
-### 2. Edge-Resource Benchmarking Suite
-Timed across 5 repeated trials measuring latency with microsecond-precision timers:
-- **Config 1 (Full Precision Twin + Heavy RF 150):** 92.96% Acc, 0.430 ms latency, 18.1 MB footprint.
-- **Config 2 (Quantized Twin + Standard RF 100):** 91.64% Acc, 0.176 ms latency, 7.29 MB footprint.
-- **Config 3 (Quantized Twin + Pruned RF 30):** 84.98% Acc, 0.152 ms latency, 571.7 KB footprint.
-- **Config 4 (Ultra-Light Fast Edge XGBoost 25):** **91.81% Acc**, **0.005 ms latency**, **105.9 KB footprint**, **204,592 samples/sec throughput**.
+| Model Architecture | Feature Space | Accuracy (%) | Macro-F1 | Weighted-F1 | Inference Latency |
+|---|---|---|---|---|---|
+| **RF-Raw (Baseline)** | Raw Telemetry (34 features) | 94.77% | 0.9177 | 0.9499 | 0.0125 ms/sample |
+| **XGB-Raw (Baseline)** | Raw Telemetry (34 features) | **95.00%** | **0.9200** | **0.9522** | **0.0114 ms/sample** |
+| **RF-Deviation (Pure)** | Continuous Residuals (9 features) | 39.49% | 0.3176 | 0.3394 | 0.0181 ms/sample |
+| **XGB-Deviation (Pure)** | Continuous Residuals (9 features) | 39.60% | 0.3119 | 0.3330 | 0.0130 ms/sample |
+| **RF-Twin-Augmented-v2** | Raw + Continuous Residuals (43) | **93.80%** | **0.9038** | **0.9390** | 0.0129 ms/sample |
+| **XGB-Twin-Augmented-v2** | Raw + Continuous Residuals (43) | **94.81%** | **0.9144** | **0.9489** | 0.0116 ms/sample |
 
-### 3. Cross-Dataset Transferability (TON_IoT Generalization)
-- **Transfer Precision:** **100.00%** (Zero false alarms on unseen testbed).
-- **Transfer F1-Score:** **0.7878**.
-- **Transfer Accuracy:** **64.99%**.
+### 2. Master Edge-Resource Benchmarking Suite
+
+| Configuration | Feature Space | Accuracy (%) | Macro-F1 | Latency (ms/sample) | Throughput (samples/s) | Storage (KB) |
+|---|---|---|---|---|---|---|
+| **Config 1: Full Twin + Heavy RF (150 trees)** | Twin-Augmented-v2 | **93.88%** | **0.9074** | 0.454 ms | 2,204.9 | 15,378.9 KB |
+| **Config 2: Quantized Twin + Standard RF (100 trees)** | Twin-Augmented-v2 | **92.76%** | **0.8938** | 0.199 ms | 5,030.2 | 5,999.7 KB |
+| **Config 3: Quantized Twin + Pruned RF (30 trees)** | Twin-Augmented-v2 | 88.84% | 0.8457 | 0.167 ms | 5,973.3 | 503.6 KB |
+| **Config 4: Fast-Inference Edge XGBoost (25 trees)** | Raw Telemetry | 91.81% | 0.8871 | **0.054 ms** | **18,690.9** | **105.9 KB** |
+
+### 3. Cross-Dataset Zero-Shot Transferability (TON_IoT Generalization)
+
+| Trained Model | Target Testbed | Transfer Accuracy (%) | Transfer F1-Score | Transfer Precision (%) | Transfer Recall (%) | False Positives | False Negatives |
+|---|---|---|---|---|---|---|---|
+| **XGB-Raw Baseline** | TON_IoT (50k) | **65.21%** | **0.7894** | **100.00%** | **65.21%** | **0** | 17,395 |
+| **XGB-Twin-Augmented-v2** | TON_IoT (50k) | **58.97%** | **0.7419** | **100.00%** | **58.97%** | **0** | 20,515 |
 
 ---
 
-## Chapter 6: Operational Explainability & Confidence Filtering
+## Chapter 6: Operational Explainability & Alert Filtering
 - **SHAP TreeExplainer:** Deconstructs multi-class predictions into specific sensor contributions (`tcp.ack`, `tcp.flags`, `udp.stream`).
 - **Signature Validation:** Filters alerts by cross-referencing top positive SHAP attributions against expected domain mechanics.
 - **Suppression Efficiency:** Suppressed **30.0%** (empirically measured across 5 stratified test splits with range: 28.6%–31.4%, $\sigma = 0.94\%$) of noisy borderline anomalies while maintaining 100% throughput for critical DDoS, Ransomware, and SQL Injection attacks.
@@ -161,5 +144,7 @@ The user can launch the entire project with a single command:
 
 ---
 
-## Chapter 8: Conclusion
-The Twin-Guided X-IDS project successfully proves that combining Digital Twin baseline forecasting with Explainable AI and domain signature filtering delivers high-accuracy, auditable intrusion detection with sub-millisecond edge latency and negligible storage overhead.
+## Chapter 8: Conclusion & Key Takeaways
+1. **Config 4 vs. Config 2 Trade-Off:** Config 4 is ideal for ultra-fast, memory-restricted network interfaces ($0.054\text{ ms}$, $105.9\text{ KB}$). Config 2 is ideal for safety-critical industrial controllers where physical deviation tracking ($|y_t - \hat{y}_t|$) and SHAP interpretability are required before physical actuator intervention.
+2. **Feature Scope Discipline:** Restricting Digital Twins to continuous physical dynamics prevents noise injection from discrete flags and ephemeral ports.
+3. **Reproducible Filtering:** The Operational Confidence Filter reliably eliminates $30.0\%$ of ambiguous alerts, effectively solving SOC alert fatigue.
