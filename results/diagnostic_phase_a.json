@@ -1,0 +1,506 @@
+{
+  "continuous_features": [
+    "icmp.checksum",
+    "icmp.seq_le",
+    "http.content_length",
+    "tcp.ack",
+    "tcp.checksum",
+    "tcp.len",
+    "tcp.seq",
+    "udp.stream",
+    "udp.time_delta"
+  ],
+  "categorical_features": [
+    "arp.opcode",
+    "arp.hw.size",
+    "http.response",
+    "tcp.ack_raw",
+    "tcp.connection.fin",
+    "tcp.connection.rst",
+    "tcp.connection.syn",
+    "tcp.connection.synack",
+    "tcp.dstport",
+    "tcp.flags",
+    "tcp.flags.ack",
+    "tcp.srcport",
+    "udp.port",
+    "dns.qry.name.len",
+    "dns.qry.qu",
+    "dns.retransmission",
+    "dns.retransmit_request",
+    "mqtt.conflag.cleansess",
+    "mqtt.conflags",
+    "mqtt.hdrflags",
+    "mqtt.len",
+    "mqtt.msgtype",
+    "mqtt.proto_len",
+    "mqtt.topic_len",
+    "mqtt.ver"
+  ],
+  "n_continuous": 9,
+  "n_categorical": 25,
+  "group_error_summary": {
+    "continuous_mean_scaled_mse": 0.5050872793639529,
+    "categorical_mean_scaled_mse": 0.8040906208438666
+  },
+  "per_feature_ranking": [
+    {
+      "feature": "tcp.connection.syn",
+      "type": "Discrete/Categorical",
+      "scaled_mse": 1.0978637139653382,
+      "scaled_mae": 0.4068171131097156,
+      "raw_mae": 0.08449579783597103,
+      "raw_min": 0.0,
+      "raw_max": 1.0
+    },
+    {
+      "feature": "tcp.connection.synack",
+      "type": "Discrete/Categorical",
+      "scaled_mse": 1.0660536581586233,
+      "scaled_mae": 0.4858463736209132,
+      "raw_mae": 0.11112818095200934,
+      "raw_min": 0.0,
+      "raw_max": 1.0
+    },
+    {
+      "feature": "tcp.connection.fin",
+      "type": "Discrete/Categorical",
+      "scaled_mse": 1.0431554378207355,
+      "scaled_mae": 0.6398715498694909,
+      "raw_mae": 0.20199484742615934,
+      "raw_min": 0.0,
+      "raw_max": 1.0
+    },
+    {
+      "feature": "tcp.seq",
+      "type": "Continuous",
+      "scaled_mse": 1.0383490625618381,
+      "scaled_mae": 0.5404886295614119,
+      "raw_mae": 20871617.213023674,
+      "raw_min": 0.0,
+      "raw_max": 207964705.0
+    },
+    {
+      "feature": "tcp.checksum",
+      "type": "Continuous",
+      "scaled_mse": 1.029247993658385,
+      "scaled_mae": 0.8790492058064145,
+      "raw_mae": 16790.966426488896,
+      "raw_min": 0.0,
+      "raw_max": 65535.0
+    },
+    {
+      "feature": "mqtt.conflag.cleansess",
+      "type": "Discrete/Categorical",
+      "scaled_mse": 1.0276337179649966,
+      "scaled_mae": 0.44089097807514993,
+      "raw_mae": 0.0953304013436507,
+      "raw_min": 0.0,
+      "raw_max": 1.0
+    },
+    {
+      "feature": "mqtt.conflags",
+      "type": "Discrete/Categorical",
+      "scaled_mse": 1.0267946351215036,
+      "scaled_mae": 0.4364791068773702,
+      "raw_mae": 0.18875291401243197,
+      "raw_min": 0.0,
+      "raw_max": 2.0
+    },
+    {
+      "feature": "mqtt.proto_len",
+      "type": "Discrete/Categorical",
+      "scaled_mse": 1.0259486648814538,
+      "scaled_mae": 0.4316951356997147,
+      "raw_mae": 0.37336822562371325,
+      "raw_min": 0.0,
+      "raw_max": 4.0
+    },
+    {
+      "feature": "tcp.srcport",
+      "type": "Discrete/Categorical",
+      "scaled_mse": 1.023480148237308,
+      "scaled_mae": 0.9867928943222692,
+      "raw_mae": 27002.189966401103,
+      "raw_min": 0.0,
+      "raw_max": 65535.0
+    },
+    {
+      "feature": "tcp.flags.ack",
+      "type": "Discrete/Categorical",
+      "scaled_mse": 1.0232405380622622,
+      "scaled_mae": 0.7598951297973581,
+      "raw_mae": 0.2714162772376346,
+      "raw_min": 0.0,
+      "raw_max": 1.0
+    },
+    {
+      "feature": "mqtt.ver",
+      "type": "Discrete/Categorical",
+      "scaled_mse": 1.0229215832293976,
+      "scaled_mae": 0.4500487894350827,
+      "raw_mae": 0.3892420925316163,
+      "raw_min": 0.0,
+      "raw_max": 4.0
+    },
+    {
+      "feature": "mqtt.hdrflags",
+      "type": "Discrete/Categorical",
+      "scaled_mse": 1.0220740977566527,
+      "scaled_mae": 0.518607304863417,
+      "raw_mae": 26.89814101977481,
+      "raw_min": 0.0,
+      "raw_max": 224.0
+    },
+    {
+      "feature": "mqtt.msgtype",
+      "type": "Discrete/Categorical",
+      "scaled_mse": 1.0213798986201459,
+      "scaled_mae": 0.5415924394816525,
+      "raw_mae": 1.755643151837449,
+      "raw_min": 0.0,
+      "raw_max": 14.0
+    },
+    {
+      "feature": "tcp.ack_raw",
+      "type": "Discrete/Categorical",
+      "scaled_mse": 1.0137235045655857,
+      "scaled_mae": 0.8728956436226762,
+      "raw_mae": 1129330854.491039,
+      "raw_min": 0.0,
+      "raw_max": 4294947151.0
+    },
+    {
+      "feature": "tcp.dstport",
+      "type": "Discrete/Categorical",
+      "scaled_mse": 1.0100725087669393,
+      "scaled_mae": 0.9913329074461154,
+      "raw_mae": 27583.00897970133,
+      "raw_min": 0.0,
+      "raw_max": 65535.0
+    },
+    {
+      "feature": "tcp.len",
+      "type": "Continuous",
+      "scaled_mse": 1.0072831294707227,
+      "scaled_mae": 0.6046404949441224,
+      "raw_mae": 248.50237599256772,
+      "raw_min": 0.0,
+      "raw_max": 65228.0
+    },
+    {
+      "feature": "tcp.connection.rst",
+      "type": "Discrete/Categorical",
+      "scaled_mse": 1.0061365776552351,
+      "scaled_mae": 0.5970861617802607,
+      "raw_mae": 0.17802005028860163,
+      "raw_min": 0.0,
+      "raw_max": 1.0
+    },
+    {
+      "feature": "tcp.flags",
+      "type": "Discrete/Categorical",
+      "scaled_mse": 1.0045571139120557,
+      "scaled_mae": 0.6791966946647879,
+      "raw_mae": 4.435137964659269,
+      "raw_min": 0.0,
+      "raw_max": 25.0
+    },
+    {
+      "feature": "mqtt.len",
+      "type": "Discrete/Categorical",
+      "scaled_mse": 0.9848074429216581,
+      "scaled_mae": 0.5290623908508054,
+      "raw_mae": 4.6343060357704395,
+      "raw_min": 0.0,
+      "raw_max": 39.0
+    },
+    {
+      "feature": "mqtt.topic_len",
+      "type": "Discrete/Categorical",
+      "scaled_mse": 0.9732786559699684,
+      "scaled_mae": 0.44104813910699014,
+      "raw_mae": 2.3131551264930392,
+      "raw_min": 0.0,
+      "raw_max": 24.0
+    },
+    {
+      "feature": "tcp.ack",
+      "type": "Continuous",
+      "scaled_mse": 0.7310439856326959,
+      "scaled_mae": 0.4093566899136948,
+      "raw_mae": 11334415.446356112,
+      "raw_min": 0.0,
+      "raw_max": 2147250934.0
+    },
+    {
+      "feature": "udp.time_delta",
+      "type": "Continuous",
+      "scaled_mse": 0.7139137498162783,
+      "scaled_mae": 0.08673034736297426,
+      "raw_mae": 1.3351908264165717,
+      "raw_min": 0.0,
+      "raw_max": 502.0
+    },
+    {
+      "feature": "udp.port",
+      "type": "Discrete/Categorical",
+      "scaled_mse": 0.7081974375439413,
+      "scaled_mae": 0.09080135185950526,
+      "raw_mae": 152.6467762826578,
+      "raw_min": 0.0,
+      "raw_max": 60310.0
+    },
+    {
+      "feature": "arp.hw.size",
+      "type": "Discrete/Categorical",
+      "scaled_mse": 0.6862888787439737,
+      "scaled_mae": 0.10387410173784305,
+      "raw_mae": 0.028127878949928804,
+      "raw_min": 0.0,
+      "raw_max": 6.0
+    },
+    {
+      "feature": "dns.qry.qu",
+      "type": "Discrete/Categorical",
+      "scaled_mse": 0.6697902686522136,
+      "scaled_mae": 0.08426116888687697,
+      "raw_mae": 0.06617710887247732,
+      "raw_min": 0.0,
+      "raw_max": 1028.0
+    },
+    {
+      "feature": "arp.opcode",
+      "type": "Discrete/Categorical",
+      "scaled_mse": 0.6083920729573201,
+      "scaled_mae": 0.08270031789312281,
+      "raw_mae": 0.003978883759972316,
+      "raw_min": 0.0,
+      "raw_max": 2.0
+    },
+    {
+      "feature": "dns.retransmission",
+      "type": "Discrete/Categorical",
+      "scaled_mse": 0.011134756111796146,
+      "scaled_mae": 0.06490307021269093,
+      "raw_mae": 0.03129400536379796,
+      "raw_min": 0.0,
+      "raw_max": 28.0
+    },
+    {
+      "feature": "http.response",
+      "type": "Discrete/Categorical",
+      "scaled_mse": 0.01098632427538236,
+      "scaled_mae": 0.0886238593331924,
+      "raw_mae": 0.0886238593331924,
+      "raw_min": 0.0,
+      "raw_max": 1.0
+    },
+    {
+      "feature": "dns.retransmit_request",
+      "type": "Discrete/Categorical",
+      "scaled_mse": 0.010657844797990812,
+      "scaled_mae": 0.0869200434879842,
+      "raw_mae": 0.0869200434879842,
+      "raw_min": 0.0,
+      "raw_max": 0.0
+    },
+    {
+      "feature": "http.content_length",
+      "type": "Continuous",
+      "scaled_mse": 0.00719262334380797,
+      "scaled_mae": 0.06382125164100637,
+      "raw_mae": 0.06382125164100637,
+      "raw_min": 0.0,
+      "raw_max": 83655.0
+    },
+    {
+      "feature": "icmp.seq_le",
+      "type": "Continuous",
+      "scaled_mse": 0.006986958429477046,
+      "scaled_mae": 0.062245831363457516,
+      "raw_mae": 0.062245831363457516,
+      "raw_min": 0.0,
+      "raw_max": 65517.0
+    },
+    {
+      "feature": "udp.stream",
+      "type": "Continuous",
+      "scaled_mse": 0.006159211548495393,
+      "scaled_mae": 0.05790600019075276,
+      "raw_mae": 51.8423508416142,
+      "raw_min": 0.0,
+      "raw_max": 2898725.0
+    },
+    {
+      "feature": "icmp.checksum",
+      "type": "Continuous",
+      "scaled_mse": 0.005608799813876209,
+      "scaled_mae": 0.05752169567569505,
+      "raw_mae": 0.05752169567569505,
+      "raw_min": 0.0,
+      "raw_max": 65530.0
+    },
+    {
+      "feature": "dns.qry.name.len",
+      "type": "Discrete/Categorical",
+      "scaled_mse": 0.0036960404041876606,
+      "scaled_mae": 0.046467816644174126,
+      "raw_mae": 0.046467816644174126,
+      "raw_min": 0.0,
+      "raw_max": 1.0
+    }
+  ],
+  "per_class_comparison": [
+    {
+      "Attack Class": "Backdoor",
+      "Support (Test)": 904,
+      "XGB-Raw F1": 0.9848,
+      "RF-Twin-Augmented F1": 0.9686,
+      "XGB-Twin-Augmented F1": 0.9843,
+      "RF vs Raw Diff": -0.0162,
+      "XGB vs Raw Diff": -0.0006,
+      "Status": "Raw Advantage"
+    },
+    {
+      "Attack Class": "DDoS_HTTP",
+      "Support (Test)": 937,
+      "XGB-Raw F1": 0.8571,
+      "RF-Twin-Augmented F1": 0.7607,
+      "XGB-Twin-Augmented F1": 0.8491,
+      "RF vs Raw Diff": -0.0965,
+      "XGB vs Raw Diff": -0.008,
+      "Status": "Raw Advantage"
+    },
+    {
+      "Attack Class": "DDoS_ICMP",
+      "Support (Test)": 1250,
+      "XGB-Raw F1": 0.9996,
+      "RF-Twin-Augmented F1": 0.9984,
+      "XGB-Twin-Augmented F1": 0.9996,
+      "RF vs Raw Diff": -0.0012,
+      "XGB vs Raw Diff": 0.0,
+      "Status": "Raw Advantage"
+    },
+    {
+      "Attack Class": "DDoS_TCP",
+      "Support (Test)": 909,
+      "XGB-Raw F1": 1.0,
+      "RF-Twin-Augmented F1": 1.0,
+      "XGB-Twin-Augmented F1": 1.0,
+      "RF vs Raw Diff": 0.0,
+      "XGB vs Raw Diff": 0.0,
+      "Status": "Raw Advantage"
+    },
+    {
+      "Attack Class": "DDoS_UDP",
+      "Support (Test)": 1286,
+      "XGB-Raw F1": 1.0,
+      "RF-Twin-Augmented F1": 1.0,
+      "XGB-Twin-Augmented F1": 1.0,
+      "RF vs Raw Diff": 0.0,
+      "XGB vs Raw Diff": 0.0,
+      "Status": "Raw Advantage"
+    },
+    {
+      "Attack Class": "Fingerprinting",
+      "Support (Test)": 89,
+      "XGB-Raw F1": 0.8889,
+      "RF-Twin-Augmented F1": 0.8471,
+      "XGB-Twin-Augmented F1": 0.875,
+      "RF vs Raw Diff": -0.0418,
+      "XGB vs Raw Diff": -0.0139,
+      "Status": "Raw Advantage"
+    },
+    {
+      "Attack Class": "MITM",
+      "Support (Test)": 108,
+      "XGB-Raw F1": 0.5806,
+      "RF-Twin-Augmented F1": 0.5737,
+      "XGB-Twin-Augmented F1": 0.5632,
+      "RF vs Raw Diff": -0.0069,
+      "XGB vs Raw Diff": -0.0175,
+      "Status": "Raw Advantage"
+    },
+    {
+      "Attack Class": "Normal",
+      "Support (Test)": 2156,
+      "XGB-Raw F1": 0.9979,
+      "RF-Twin-Augmented F1": 0.9854,
+      "XGB-Twin-Augmented F1": 0.9979,
+      "RF vs Raw Diff": -0.0125,
+      "XGB vs Raw Diff": 0.0,
+      "Status": "Raw Advantage"
+    },
+    {
+      "Attack Class": "Password",
+      "Support (Test)": 886,
+      "XGB-Raw F1": 0.899,
+      "RF-Twin-Augmented F1": 0.7923,
+      "XGB-Twin-Augmented F1": 0.8963,
+      "RF vs Raw Diff": -0.1066,
+      "XGB vs Raw Diff": -0.0027,
+      "Status": "Raw Advantage"
+    },
+    {
+      "Attack Class": "Port_Scanning",
+      "Support (Test)": 893,
+      "XGB-Raw F1": 0.9511,
+      "RF-Twin-Augmented F1": 0.9418,
+      "XGB-Twin-Augmented F1": 0.9459,
+      "RF vs Raw Diff": -0.0093,
+      "XGB vs Raw Diff": -0.0052,
+      "Status": "Raw Advantage"
+    },
+    {
+      "Attack Class": "Ransomware",
+      "Support (Test)": 969,
+      "XGB-Raw F1": 0.9385,
+      "RF-Twin-Augmented F1": 0.8924,
+      "XGB-Twin-Augmented F1": 0.9179,
+      "RF vs Raw Diff": -0.0461,
+      "XGB vs Raw Diff": -0.0205,
+      "Status": "Raw Advantage"
+    },
+    {
+      "Attack Class": "SQL_injection",
+      "Support (Test)": 915,
+      "XGB-Raw F1": 0.8963,
+      "RF-Twin-Augmented F1": 0.7889,
+      "XGB-Twin-Augmented F1": 0.8894,
+      "RF vs Raw Diff": -0.1074,
+      "XGB vs Raw Diff": -0.0069,
+      "Status": "Raw Advantage"
+    },
+    {
+      "Attack Class": "Uploading",
+      "Support (Test)": 911,
+      "XGB-Raw F1": 0.9221,
+      "RF-Twin-Augmented F1": 0.7755,
+      "XGB-Twin-Augmented F1": 0.9202,
+      "RF vs Raw Diff": -0.1466,
+      "XGB vs Raw Diff": -0.0019,
+      "Status": "Raw Advantage"
+    },
+    {
+      "Attack Class": "Vulnerability_scanner",
+      "Support (Test)": 894,
+      "XGB-Raw F1": 0.9759,
+      "RF-Twin-Augmented F1": 0.9478,
+      "XGB-Twin-Augmented F1": 0.9714,
+      "RF vs Raw Diff": -0.0281,
+      "XGB vs Raw Diff": -0.0045,
+      "Status": "Raw Advantage"
+    },
+    {
+      "Attack Class": "XSS",
+      "Support (Test)": 892,
+      "XGB-Raw F1": 0.9084,
+      "RF-Twin-Augmented F1": 0.8406,
+      "XGB-Twin-Augmented F1": 0.9073,
+      "RF vs Raw Diff": -0.0678,
+      "XGB vs Raw Diff": -0.0011,
+      "Status": "Raw Advantage"
+    }
+  ]
+}
