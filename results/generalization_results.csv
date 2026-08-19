@@ -1,2 +1,3 @@
-Source Dataset (Trained),Target Dataset (Unseen),Sample Count,Transfer Accuracy (%),Transfer F1-Score,Transfer Precision,Transfer Recall
-Edge-IIoTset,TON_IoT,50000,64.99,0.7878,1.0,0.6499
+Trained Model,Source Dataset,Target Dataset,Samples Evaluated,Transfer Accuracy (%),Transfer F1-Score,Transfer Precision (%),Transfer Recall (%),False Positive Count,False Negative Count
+XGB-Raw Baseline,Edge-IIoTset,TON_IoT (Unseen),50000,65.21,0.7894,100.0,65.21,0,17395
+XGB-Twin-Augmented-v2,Edge-IIoTset,TON_IoT (Unseen),50000,58.97,0.7419,100.0,58.97,0,20514
