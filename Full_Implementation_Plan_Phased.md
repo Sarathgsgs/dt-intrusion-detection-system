@@ -1,158 +1,181 @@
-# Full Implementation Plan: Twin-Guided Explainable Intrusion Detection System (X-IDS)
+# Full Implementation & Revision Plan: Twin-Guided Explainable Intrusion Detection System (X-IDS)
 ## A Resource-Aware Trade-off Analysis for Industrial IoT
 
-**Project Scope:** Digital Twin (Active Predictor) → Deviation Engine → IDS Classifier (Baseline vs. Twin-Deviation) → SHAP Explainability → Confidence Filter → Edge-Resource Benchmarking → FastAPI Backend + Interactive React Dashboard.
+**Project State:** Baseline Pipeline Fully Operational (Milestones 0–9 Complete).  
+**Current Phase:** Scientific Refinement, Number Reconciliation & Defense Hardening (Phases A–H).  
+**Repository:** [https://github.com/Sarathgsgs/dt-intrusion-detection-system.git](https://github.com/Sarathgsgs/dt-intrusion-detection-system.git)
 
 ---
 
-## 📌 Execution Responsibility Matrix: [IN-IDE] vs. [EXTERNAL / USER ACTION]
+## 📌 Executive Architecture & Execution Matrix
 
-| Component / Task | Location | Handled By | Details |
-|---|---|---|---|
-| **Python Environment & Dependencies** | Inside IDE / System | Agent + User | Python 3.10–3.12 environment setup with ML/API/Frontend dependencies. |
-| **Dataset Acquisition** | Outside IDE | **User Action** | Download Edge-IIoTset (and optional TON_IoT) from Kaggle/source to `data/`. |
-| **Data Cleaning, Sampling & Dictionary** | Inside IDE | **Agent [IN-IDE]** | Automated cleaning, categorical encoding, stratified sampling (~70k rows). |
-| **Telemetry Simulator (`simulator.py`)** | Inside IDE | **Agent [IN-IDE]** | Real-time generator with configurable playback delay (Fast & Live stream modes). |
-| **Digital Twin Model (Local or Colab)** | Hybrid | **Agent [IN-IDE]** & *(Optional Colab GPU)* | Agent builds training script + Colab Notebook. Colab used if GPU training chosen; or CPU-optimized local training. Produces `twin_model_quantized.tflite`. |
-| **Deviation Engine (`deviation_engine.py`)** | Inside IDE | **Agent [IN-IDE]** | TFLite inference, residual computation $\|actual - predicted\|$, generates `deviation_dataset.csv`. |
-| **IDS Classifiers (`ids_model.py`)** | Inside IDE | **Agent [IN-IDE]** | Trains & compares 4 models (RF-raw, XGB-raw, RF-dev, XGB-dev) with Macro-F1 & class balance. |
-| **XAI & Confidence Filter (`xai_module.py`, `confidence_filter.py`)** | Inside IDE | **Agent [IN-IDE]** | TreeExplainer SHAP attribution + domain attack signature rules to suppress low-fidelity false positives. |
-| **Edge-Resource Benchmarking (`edge_benchmark.py`)** | Inside IDE | **Agent [IN-IDE]** | Benchmarks 3–4 configurations (Full RF vs Quantized vs Pruned) for Latency (ms), RAM/Model Size (KB), and Accuracy/Macro-F1. |
-| **FastAPI Backend Server (`api_server.py`)** | Inside IDE | **Agent [IN-IDE]** | REST + SSE/WebSocket endpoints for live telemetry, real-time alerts, SHAP explanations, and benchmark data. |
-| **Modern React Dashboard (`dashboard/`)** | Inside IDE | **Agent [IN-IDE]** | High-aesthetic UI: live alert feed, dynamic deviation charts, SHAP waterfall/bar charts, confidence filter toggles, and trade-off comparison curves. |
-| **Documentation & Evaluation Report** | Inside IDE | **Agent [IN-IDE]** | Master result tables, visualization plots, verification scripts, and demo guides. |
-
----
-
-## 🛠️ What You (The User) Need to Provide
-
-1. **Python Environment (Python 3.10, 3.11, or 3.12 recommended):**
-   - Ensure a Python 3.10–3.12 runtime is available on your machine (Python 3.14 is currently too new for compiled C-extensions like `shap`, `tensorflow`, and `tflite-runtime`).
-2. **Dataset CSV File:**
-   - Download the **Edge-IIoTset** dataset (e.g., `DNN-EdgeIIoT-dataset.csv` or ML dataset from Kaggle: `mohamedamineferrag/edgeiiotset-cyber-security-dataset-of-iot-iiot`).
-   - Place it into `e:\Projects\digital twin\data\raw_edge_iiotset.csv`.
-   - *(Optional for Phase 7 generalization)*: `TON_IoT` dataset placed in `data/ton_iot.csv`.
-3. **Google Colab (Only for GPU-accelerated LSTM training in Phase 3 - Optional):**
-   - If you want deep LSTM training on GPU, open the generated notebook `notebooks/01_train_digital_twin_colab.ipynb` in Google Colab, click *Run All*, and copy the exported `twin_model_quantized.tflite` to `models/`.
-   - *Alternative:* If you prefer to stay 100% inside this IDE, we provide a local CPU-optimized Twin trainer (Lightweight GRU/Dense or Exponential Smoothing) that runs directly on your machine.
-
----
-
-## 🚀 Step-by-Step Milestone-Driven Implementation Phases
-
-### Milestone 0: Environment & Folder Structure Setup `[IN-IDE]`
-- Create project directory tree:
-  ```
-  twin-ids-project/
-  ├── data/                  # Raw, sampled, and deviation datasets
-  ├── notebooks/             # Colab training notebooks & exploratory analyses
-  ├── src/                   # Core Python modules
-  │   ├── __init__.py
-  │   ├── simulator.py       # Telemetry generator
-  │   ├── twin_model.py      # Digital Twin training & inference helper
-  │   ├── deviation_engine.py# Residual vector computation
-  │   ├── ids_model.py       # Baseline vs Deviation Classifiers
-  │   ├── xai_module.py      # SHAP TreeExplainer module
-  │   ├── confidence_filter.py # Signature & confidence rule engine
-  │   ├── edge_benchmark.py  # Latency, memory, and trade-off benchmark
-  │   └── api_server.py      # FastAPI backend
-  ├── models/                # Saved .pkl, .tflite, and scaler artifacts
-  ├── results/               # Benchmark CSVs, SHAP plots, confusion matrices
-  └── dashboard/             # Modern React + Vite frontend
-  ```
-- Install dependencies: `pandas`, `numpy`, `scikit-learn`, `xgboost`, `shap`, `matplotlib`, `fastapi`, `uvicorn`, `tflite-runtime` or `tensorflow-cpu`.
-- Initialize Git repository and sanity test imports.
+```
+[ IIoT Telemetry Stream ] (34 Raw Features)
+           │
+           ├──────────────────────────────┬──────────────────────────────┐
+           ▼                                                             ▼
+[ 14 Continuous / Physical Features ]                     [ 20 Categorical / Discrete Features ]
+           │                                                (Ports, Flags, Protocols)
+           ▼                                                             │
+[ Digital Twin Forecaster ] (MLP/LSTM)                                  │
+  (Forecasts ONLY Continuous Baseline Dynamics)                          │
+           │                                                             │
+           ▼ ŷ_t                                                         │
+[ Deviation Engine ]                                                     │
+  e_t = |y_t - ŷ_t| (14 Residuals)                                       │
+           │                                                             │
+           └──────────────────────────────┬──────────────────────────────┘
+                                          ▼
+                      [ Twin-Augmented-v2 Feature Space ]
+                      (20 Raw Categorical + 14 Raw Continuous + 14 Deviation Continuous = 48 Features)
+                                          │
+                                          ▼
+                      [ Multi-Class IDS Classifiers ]
+                           (Random Forest / XGBoost)
+                                          │
+                          ┌───────────────┴───────────────┐
+                          ▼                               ▼
+                [ Prediction & Confidence ]      [ SHAP TreeExplainer ]
+                          │                               │
+                          └───────────────┬───────────────┘
+                                          ▼
+                          [ Operational Confidence Filter ]
+                            (Signature Match + γ Bounds)
+                                          │
+                        ┌─────────────────┴─────────────────┐
+                        ▼                                   ▼
+            [ High-Fidelity Alert ]                [ Suppressed Noise ]
+```
 
 ---
 
-### Milestone 1: Data Acquisition & Preprocessing `[HYBRID]`
-- **User Action `[EXTERNAL]`**: Place raw Edge-IIoTset CSV into `data/`.
-- **Agent `[IN-IDE]`**:
-  - Load and inspect all features (network telemetry, sensor measurements, attack categories).
-  - Clean missing values, infinities, and drop non-informative metadata (timestamps, IP/MAC addresses).
-  - Perform stratified downsampling to ~70,000 rows, preserving multiclass attack distributions (DDoS, Ransomware, SQLi, Fingerprinting, MITM, Vulnerability Scans, Normal).
-  - Export `data/sampled_dataset.csv`, `data/data_dictionary.json`, and class distribution report.
+## 🛠️ Execution Responsibility Matrix
+
+| Phase | Description | Location | Primary Files | Handled By |
+|---|---|---|---|---|
+| **Phase A** | Root-Cause Diagnosis & Feature Partitioning | Inside IDE | `src/preprocess.py`, `src/twin_model.py` | **Agent [IN-IDE]** |
+| **Phase B** | Scope-Restricted Digital Twin & Retraining | Inside IDE | `src/twin_model.py`, `src/deviation_engine.py`, `src/ids_model.py` | **Agent [IN-IDE]** |
+| **Phase C** | Per-Attack-Type Advantage Discovery | Inside IDE | `src/ids_model.py`, `results/` | **Agent [IN-IDE]** |
+| **Phase D** | Confidence Filter Metric Reconciliation | Inside IDE | `src/confidence_filter.py`, `docs/` | **Agent [IN-IDE]** |
+| **Phase E** | TON_IoT Generalization Dual-Model Audit | Inside IDE | `src/generalization_eval.py`, `results/` | **Agent [IN-IDE]** |
+| **Phase F** | Paper & Report Value Proposition Reframing | Inside IDE | `docs/RESEARCH_PAPER_DRAFT.md`, `docs/FINAL_PROJECT_REPORT.md` | **Agent [IN-IDE]** |
+| **Phase G** | Dashboard Visual & Data-Binding Fix | Inside IDE | `dashboard/src/App.jsx`, `src/api_server.py` | **Agent [IN-IDE]** |
+| **Phase H** | Final Number Reconciliation & Defense Prep | Inside IDE | `docs/VIVA_DEFENSE_SCRIPT.md`, All Docs | **Agent [IN-IDE]** |
 
 ---
 
-### Milestone 2: Telemetry Simulator `[IN-IDE]`
-- Write `src/simulator.py` supporting:
-  - **Generator Mode**: Yields sequential telemetry records row-by-row.
-  - **Fast Batch Mode**: Zero-delay replay for training and offline benchmarking.
-  - **Real-Time Live Mode**: Controlled delay (e.g. 50ms–500ms) with jitter for live dashboard streaming.
-- Unit tests to guarantee exact sequence order and zero data leakage.
+## 🚀 Detailed Phase-by-Phase Revision Tasks
+
+### 📍 Phase A — Root-Cause Diagnosis (Audit & Analysis)
+**Objective:** Diagnose why the initial all-feature twin-deviation model underperformed before making code changes.
+
+1. **Feature Partitioning:**
+   - Classify all 34 features into:
+     - **Continuous/Physical features** (temporal dynamics, byte counts, packet length, jitter, duration).
+     - **Categorical/Discrete features** (ports, protocol numbers, TCP/IP flags, connection state codes) where sequence forecasting is mathematically non-smooth.
+2. **Per-Feature Error Decomposition:**
+   - Update `src/twin_model.py` to evaluate validation MSE and MAE broken down **per feature** on scaled data.
+   - Identify which features the Twin forecasts with high precision vs. high variance.
+3. **Scaling Audit:**
+   - Verify `models/twin_scaler.pkl` normalization consistency between training sequences and live deviation engine calculation.
+4. **Per-Class Baseline Audit:**
+   - Generate full per-class precision, recall, and F1 reports for baseline XGB-Raw vs original RF-Twin-Augmented.
+
+**Deliverable:** Diagnostic report (`results/diagnostic_phase_a.json` & summary note).
 
 ---
 
-### Milestone 3: Digital Twin Forecasting Model `[HYBRID: Colab or Local CPU]`
-- Filter dataset to **Normal-only** operation.
-- Construct temporal sliding window sequences ($t-W \dots t-1 \to t$).
-- Train predictive model (LSTM/GRU) on normal behavior dynamics.
-- Export & quantize model using TFLite dynamic range quantization (`models/twin_model_quantized.tflite`).
-- Output validation plots: Predicted vs. Actual telemetry on unseen normal sequences.
-- **Colab Option `[EXTERNAL]`**: Ready notebook generated for 1-click Colab T4 execution if desired.
+### 📍 Phase B — Fix the Twin's Feature Scope & Retrain
+**Objective:** Restrict the Digital Twin to forecast only physically forecastable features, passing categorical features directly to the classifier.
+
+1. **Scope-Restricted Twin (`src/twin_model.py`):**
+   - Retrain the Digital Twin on the **Continuous Feature subset only** ($K$ continuous features).
+   - Export updated `models/twin_model.pkl` and `models/twin_scaler.pkl`.
+2. **Targeted Deviation Engine (`src/deviation_engine.py`):**
+   - Calculate residuals $e_{t, j} = |y_{t, j} - \hat{y}_{t, j}|$ strictly for the continuous subset.
+   - Construct `Twin-Augmented-v2` feature space:
+     $$\mathbf{z}_t = [\mathbf{x}_{\text{categorical}} \,\|\, \mathbf{x}_{\text{continuous}} \,\|\, \mathbf{e}_{\text{continuous}}]$$
+3. **Retrain IDS Models (`src/ids_model.py`):**
+   - Retrain RF and XGBoost on `Twin-Augmented-v2`.
+   - Update `results/ids_metrics.csv` and `results/ids_comparison.png`.
+
+**Deliverable:** Updated `data/deviation_dataset.csv`, `models/`, and comparative metrics table.
 
 ---
 
-### Milestone 4: Deviation Engine `[IN-IDE]`
-- Implement `src/deviation_engine.py`:
-  - Loads `models/twin_model_quantized.tflite` via lightweight runtime.
-  - Calculates feature-wise deviation vector: $e_t = |y_t - \hat{y}_t|$.
-  - Generates `data/deviation_dataset.csv`.
-- Generates statistical separation plots (boxplots & distribution density) comparing normal deviations vs attack deviations.
+### 📍 Phase C — Per-Attack-Type Advantage Discovery
+**Objective:** Uncover specific attack categories where Twin-Augmentation provides a distinct detection advantage over raw telemetry.
+
+1. **Per-Attack F1 Matrix:**
+   - Map per-class F1 scores: Raw Baseline vs. Twin-Augmented-v2 across all 15 attack types.
+2. **Behavioral vs. Volumetric Pattern Analysis:**
+   - Test hypothesis: Twin guidance excels on stealthy behavioral anomalies / tampering / MITM where raw statistical thresholds fail, while volumetric floods are dominated by raw port/packet counters.
+3. **Visualization:**
+   - Generate `results/per_attack_comparison.png` and `results/per_attack_f1.csv`.
+
+**Deliverable:** Dedicated per-attack comparison chart and definitive evidence-backed finding.
 
 ---
 
-### Milestone 5: IDS Classifiers (Baseline vs. Twin-Deviation) `[IN-IDE]`
-- Implement `src/ids_model.py`:
-  - **Model A (Baseline)**: Random Forest & XGBoost trained on **Raw Telemetry**.
-  - **Model B (Proposed Twin-Guided)**: Random Forest & XGBoost trained on **Deviation Features**.
-- Multi-class optimization with class balancing (`class_weight="balanced"` / scale pos weight).
-- Full comparative evaluation: Accuracy, Macro-F1, Precision, Recall per attack class, Confusion Matrices.
-- Save trained models to `models/`.
+### 📍 Phase D — Confidence-Filter Metric Reconciliation
+**Objective:** Establish a single, reproducible, and verifiable suppression rate across all documentation and dashboard sessions.
+
+1. **Multi-Seed Filter Benchmark:**
+   - Run `src/confidence_filter.py` across 5 stratified test splits.
+   - Record exact mean suppression rate and empirical min-max range (e.g. 28.4% – 32.1%).
+2. **Documentation Synchronization:**
+   - Reconcile numbers in `docs/RESEARCH_PAPER_DRAFT.md`, `docs/FINAL_PROJECT_REPORT.md`, `src/api_server.py`, and dashboard cards.
+
+**Deliverable:** 100% consistent suppression metrics across the codebase.
 
 ---
 
-### Milestone 6: SHAP Explainability & Confidence Filter `[IN-IDE]`
-- Implement `src/xai_module.py`:
-  - High-performance SHAP `TreeExplainer` on top-performing deviation model.
-  - Local feature attribution per alert + global summary plots.
-- Implement `src/confidence_filter.py`:
-  - Domain-specific attack signatures (e.g., DDoS features vs. Injection features).
-  - Decision logic: Suppresses borderline / low-fidelity alerts where model confidence is ambiguous and SHAP attribution diverges from known attack signatures.
-  - Verification test suite demonstrating alert filtering and suppression rate.
+### 📍 Phase E — TON_IoT Generalization Dual-Model Audit
+**Objective:** Evaluate both Raw and Twin-Augmented models on unseen TON_IoT data with complete precision and recall reporting.
+
+1. **Dual-Model Zero-Shot Evaluation (`src/generalization_eval.py`):**
+   - Run both XGB-Raw and XGB-Twin-Augmented-v2 against `data/train_test_network.csv`.
+2. **Complete Metric Reporting:**
+   - Document Accuracy, Macro-F1, Precision, and **per-class Recall** (quantifying conservative vs aggressive alerting).
+3. **Export Updated Results:**
+   - Save to `results/generalization_results.csv` and `results/generalization_transfer.png`.
+
+**Deliverable:** Comparative cross-dataset table explaining precision-recall trade-offs.
 
 ---
 
-### Milestone 7: Edge-Resource Benchmarking Suite `[IN-IDE]`
-- Implement `src/edge_benchmark.py`:
-  - Benchmarks 3–4 pipeline configurations:
-    1. Full-Precision Twin + Full Random Forest (150 estimators).
-    2. Quantized TFLite Twin + Full Random Forest.
-    3. Quantized TFLite Twin + Pruned Random Forest (50 estimators).
-    4. *(Optional)* Lightweight Fast-Inference XGBoost profile.
-  - Measures: Inference Latency per sample (ms, averaged over 100+ cycles), Peak Memory Usage (MB), Model Footprint (KB), and Classification Macro-F1.
-  - Generates `results/benchmark_results.csv` and interactive Pareto frontier trade-off charts.
+### 📍 Phase F — Reposition the Twin's Value Proposition
+**Objective:** Frame the academic contribution with scientific honesty, highlighting causal interpretability and specific behavioral advantages rather than forcing an artificial aggregate win.
+
+1. **Paper & Report Reframing (`docs/RESEARCH_PAPER_DRAFT.md`, `docs/FINAL_PROJECT_REPORT.md`):**
+   - Articulate why lightweight Config 4 (XGBoost) dominates on raw latency/size, while Config 2 (Quantized Twin) provides physical grounding, explainable deviation signals, and stealth anomaly protection.
+2. **Threats to Validity:**
+   - Add explicit limitations and boundary condition discussions.
+
+**Deliverable:** Publication-grade, reviewer-proof academic drafts.
 
 ---
 
-### Milestone 8: FastAPI Backend & Modern Interactive Dashboard `[IN-IDE]`
-- **FastAPI Server (`src/api_server.py`)**:
-  - `/api/stream`: SSE / WebSocket telemetry stream feed.
-  - `/api/predict`: Live inference pipeline (Simulator → Twin → Deviation → IDS → SHAP → Filter).
-  - `/api/benchmarks`: Serves experimental trade-off data.
-  - `/api/stats`: Real-time detection statistics and suppression rates.
-- **Modern React Dashboard (`dashboard/`)**:
-  - Built with Vite + React + Lucide Icons + Recharts / Canvas.
-  - Features:
-    - **Live Monitor**: Real-time sensor charts with anomalous deviation highlights.
-    - **Threat Alert Center**: Instant alert cards with confidence score and filter status (Passed / Suppressed).
-    - **Explainability Panel**: Live SHAP feature attribution bar charts explaining *why* an alert fired.
-    - **Resource Benchmark Studio**: Interactive trade-off plots comparing Latency, Size, and Macro-F1 across edge configurations.
-    - **Interactive Simulation Controls**: Play, Pause, Speed adjustment, and manual attack injection.
+### 📍 Phase G — Dashboard Visual & Data-Binding Fix
+**Objective:** Ensure the Live Monitor dual-trace chart exhibits dynamic, responsive motion during replay.
+
+1. **Dynamic Feature Binding:**
+   - Update `dashboard/src/App.jsx` and `src/api_server.py` to stream a high-variance continuous feature (e.g. dynamic packet size / connection rate) so the Actual vs. Twin forecast traces visibly move.
+2. **Visual Polish:**
+   - Add contextual tooltips and attack injection status badges.
+
+**Deliverable:** Fully responsive, moving live visualizer on `http://localhost:5173`.
 
 ---
 
-### Milestone 9: Final Artifacts, Reports & Demo Script `[IN-IDE]`
-- Generate comprehensive project summary, benchmark tables, and architecture diagrams.
-- Produce a step-by-step Viva / Defense demonstration script.
+### 📍 Phase H — Master Consistency Check & Defense Prep
+**Objective:** Validate that every number, figure, and defense script is synchronized and demo-ready.
+
+1. **Full Metric Audit:**
+   - Re-verify consistency across `results/*.csv`, `docs/`, and dashboard.
+2. **Examiner Q&A Expansion (`docs/VIVA_DEFENSE_SCRIPT.md`):**
+   - Add fortified answers for:
+     - *"Why use a Digital Twin if raw XGBoost has higher aggregate accuracy?"*
+     - *"Why choose Config 2 over Config 4 in safety-critical edge environments?"*
+
+**Deliverable:** Comprehensive, locked-in defense suite.
