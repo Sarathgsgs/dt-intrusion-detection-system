@@ -1,0 +1,46 @@
+{
+  "confidence_threshold": 0.65,
+  "n_splits": 5,
+  "mean_suppression_rate_pct": 30.02,
+  "min_suppression_rate_pct": 28.64,
+  "max_suppression_rate_pct": 31.4,
+  "std_dev_pct": 0.94,
+  "canonical_documented_string": "30.0% (range: 28.6% - 31.4%)",
+  "split_breakdown": [
+    {
+      "split_id": 1,
+      "total_alerts": 845,
+      "passed_alerts": 588,
+      "suppressed_alerts": 257,
+      "suppression_rate_pct": 30.41
+    },
+    {
+      "split_id": 2,
+      "total_alerts": 844,
+      "passed_alerts": 579,
+      "suppressed_alerts": 265,
+      "suppression_rate_pct": 31.4
+    },
+    {
+      "split_id": 3,
+      "total_alerts": 852,
+      "passed_alerts": 608,
+      "suppressed_alerts": 244,
+      "suppression_rate_pct": 28.64
+    },
+    {
+      "split_id": 4,
+      "total_alerts": 850,
+      "passed_alerts": 600,
+      "suppressed_alerts": 250,
+      "suppression_rate_pct": 29.41
+    },
+    {
+      "split_id": 5,
+      "total_alerts": 843,
+      "passed_alerts": 588,
+      "suppressed_alerts": 255,
+      "suppression_rate_pct": 30.25
+    }
+  ]
+}

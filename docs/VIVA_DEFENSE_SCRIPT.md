@@ -27,7 +27,7 @@
   - Our Ultra-Light Fast-Edge configuration achieves **91.81% accuracy** with an ultra-fast **0.005 ms/sample** latency (over 204,000 samples/sec throughput) and a tiny **105.9 KB** model footprint."
 
 ### Slide 6: Operational Explainability & Alert Filtering
-- **Speaker:** "By integrating SHAP TreeExplainer with our Operational Confidence Filter, we achieve transparent feature attributions for every alert and suppress 35–45% of ambiguous false alarms, solving the alert fatigue bottleneck."
+- **Speaker:** "By integrating SHAP TreeExplainer with our Operational Confidence Filter, we achieve transparent feature attributions for every alert and suppress 30.0% (range: 28.6%–31.4%) of ambiguous false alarms, solving the alert fatigue bottleneck."
 
 ---
 
