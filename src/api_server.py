@@ -105,10 +105,18 @@ class SystemPipeline:
         # Operational Confidence Filter
         filter_result = self.confidence_filter.evaluate(pred_result, shap_exp)
         
+        # Active continuous physical signal for live dual-trace visualizer (e.g., tcp.len)
+        active_metric = "tcp.len" if "tcp.len" in record["features"] else self.raw_features[0]
+        actual_val = float(record["features"].get(active_metric, 0.0))
+        twin_val = float(predicted_state[self.raw_features.index(active_metric)]) if active_metric in self.raw_features else actual_val
+        
         # Construct unified packet
         packet = {
             "index": record["index"],
             "timestamp": record["timestamp"],
+            "active_metric": active_metric,
+            "actual_signal": actual_val,
+            "twin_signal": twin_val,
             "features": record["features"],
             "predicted_state": {k: float(v) for k, v in zip(self.raw_features, predicted_state)},
             "mean_deviation": mean_deviation,

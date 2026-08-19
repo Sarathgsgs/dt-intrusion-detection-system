@@ -85,17 +85,29 @@ export default function App() {
 
             // Update rolling telemetry history for chart
             setTelemetryHistory((prev) => {
-              const featKey = Object.keys(data.features)[0] || 'sensor_0';
+              const activeName = data.active_metric || 'tcp.len';
+              const actualVal = (data.actual_signal !== undefined && data.actual_signal !== null)
+                ? data.actual_signal
+                : (data.features[activeName] ?? data.features['tcp.len'] ?? data.features['sensor_telemetry'] ?? 50.0);
+                
+              const predictedVal = (data.twin_signal !== undefined && data.twin_signal !== null)
+                ? data.twin_signal
+                : (data.predicted_state?.[activeName] ?? data.predicted_state?.['tcp.len'] ?? data.predicted_state?.['sensor_telemetry'] ?? actualVal);
+                
+              const devVal = (data.mean_deviation !== undefined && data.mean_deviation !== null)
+                ? data.mean_deviation
+                : Math.abs(actualVal - predictedVal);
+
               const nextPoint = {
                 time: new Date(data.timestamp * 1000).toLocaleTimeString([], { hour12: false, minute: '2-digit', second: '2-digit' }),
-                actual: data.features[featKey],
-                predicted: data.predicted_state[featKey] || data.features[featKey],
-                deviation: data.mean_deviation,
+                actual: Number(Number(actualVal).toFixed(2)),
+                predicted: Number(Number(predictedVal).toFixed(2)),
+                deviation: Number(Number(devVal).toFixed(2)),
                 label: data.ground_truth,
-                predClass: data.prediction.predicted_class
+                predClass: data.prediction?.predicted_class || 'Normal'
               };
               const updated = [...prev, nextPoint];
-              return updated.slice(-25); // keep last 25 points
+              return updated.slice(-30); // keep rolling 30 points
             });
 
             // Update alerts feed
@@ -416,9 +428,22 @@ export default function App() {
               <div className="glass-panel" style={{ padding: '1.5rem' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
                   <div>
-                    <h2 style={{ fontSize: '1.1rem', fontWeight: 700 }}>Real-Time Digital Twin State Tracking</h2>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '4px' }}>
+                      <h2 style={{ fontSize: '1.1rem', fontWeight: 700 }}>Continuous Digital Twin State Tracking</h2>
+                      <span style={{
+                        background: 'rgba(56, 189, 248, 0.15)',
+                        color: '#38bdf8',
+                        border: '1px solid rgba(56, 189, 248, 0.3)',
+                        padding: '2px 8px',
+                        borderRadius: '6px',
+                        fontSize: '0.7rem',
+                        fontWeight: 700
+                      }}>
+                        Active Signal: {latestPacket?.active_metric || 'tcp.len'} (Bytes)
+                      </span>
+                    </div>
                     <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-                      Blue: Actual Sensor Reading • Amber: Digital Twin Healthy Forecast
+                      Blue: Actual Ingested Telemetry ($y_t$) • Amber: Digital Twin Baseline Forecast ($\hat{y}_t$) • Deviation: $|y_t - \hat{y}_t|$
                     </p>
                   </div>
                   <span style={{

@@ -146,14 +146,18 @@ class CloudSimulator:
         packet = {
             "index": self.step_count,
             "timestamp": time.time(),
+            "active_metric": "tcp.len",
+            "actual_signal": round(actual_val, 2),
+            "twin_signal": round(twin_val, 2),
             "features": {
                 "sensor_telemetry": round(actual_val, 2),
-                "tcp.len": random.randint(40, 1500),
+                "tcp.len": round(actual_val, 2),
                 "tcp.flags": random.randint(2, 24),
                 "udp.stream": random.randint(1, 100)
             },
             "predicted_state": {
-                "sensor_telemetry": round(twin_val, 2)
+                "sensor_telemetry": round(twin_val, 2),
+                "tcp.len": round(twin_val, 2)
             },
             "mean_deviation": round(deviation, 2),
             "ground_truth": attack_type,
