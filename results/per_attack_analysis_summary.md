@@ -30,21 +30,21 @@ Across all **13,999 test samples** evaluated across 15 individual attack classes
 
 | Attack Class | Category | Support | XGB-Raw F1 | XGB-Twin-v2 F1 | $\Delta F_1$ (XGB) | RF-Twin-v2 F1 | Outcome |
 |---|---|---|---|---|---|---|---|
+| **XSS** | Application & Payload-Centric | 892 | 0.9084 | 0.9085 | +0.0001 | 0.8839 | `Statistical Parity` |
 | **DDoS_TCP** | Volumetric / Network Flood | 909 | 1.0000 | 1.0000 | +0.0000 | 1.0000 | `Exact Parity` |
 | **DDoS_UDP** | Volumetric / Network Flood | 1286 | 1.0000 | 1.0000 | +0.0000 | 1.0000 | `Exact Parity` |
-| **Normal** | Normal Baseline | 2156 | 0.9979 | 0.9979 | +0.0000 | 0.9977 | `Exact Parity` |
-| **DDoS_ICMP** | Volumetric / Network Flood | 1250 | 0.9996 | 0.9996 | +0.0000 | 0.9984 | `Statistical Parity` |
-| **Backdoor** | Application & Payload-Centric | 904 | 0.9848 | 0.9848 | +0.0000 | 0.9781 | `Statistical Parity` |
-| **Vulnerability_scanner** | Application & Payload-Centric | 894 | 0.9759 | 0.9758 | -0.0001 | 0.9748 | `Statistical Parity` |
-| **XSS** | Application & Payload-Centric | 892 | 0.9084 | 0.9074 | -0.0010 | 0.8824 | `Statistical Parity` |
-| **Password** | Application & Payload-Centric | 886 | 0.8990 | 0.8978 | -0.0011 | 0.8521 | `Statistical Parity` |
-| **SQL_injection** | Application & Payload-Centric | 915 | 0.8963 | 0.8932 | -0.0032 | 0.8707 | `Statistical Parity` |
-| **DDoS_HTTP** | Volumetric / Network Flood | 937 | 0.8571 | 0.8539 | -0.0032 | 0.8250 | `Statistical Parity` |
-| **Uploading** | Application & Payload-Centric | 911 | 0.9221 | 0.9172 | -0.0049 | 0.9009 | `Statistical Parity` |
-| **Port_Scanning** | Volumetric / Network Flood | 893 | 0.9511 | 0.9411 | -0.0100 | 0.9397 | `Raw Baseline Preferred` |
-| **Fingerprinting** | Stealth Behavioral / Recon | 89 | 0.8889 | 0.8750 | -0.0139 | 0.8466 | `Raw Baseline Preferred` |
-| **Ransomware** | Application & Payload-Centric | 969 | 0.9385 | 0.9180 | -0.0205 | 0.9150 | `Raw Baseline Preferred` |
-| **MITM** | Stealth Behavioral / Recon | 108 | 0.5806 | 0.5538 | -0.0268 | 0.5758 | `Raw Baseline Preferred` |
+| **DDoS_ICMP** | Volumetric / Network Flood | 1250 | 0.9996 | 0.9996 | +0.0000 | 0.9992 | `Exact Parity` |
+| **Backdoor** | Application & Payload-Centric | 904 | 0.9848 | 0.9848 | +0.0000 | 0.9758 | `Statistical Parity` |
+| **Normal** | Normal Baseline | 2156 | 0.9979 | 0.9977 | -0.0002 | 0.9977 | `Exact Parity` |
+| **MITM** | Stealth Behavioral / Recon | 108 | 0.5806 | 0.5792 | -0.0015 | 0.5887 | `Twin Advantage` |
+| **Uploading** | Application & Payload-Centric | 911 | 0.9221 | 0.9205 | -0.0016 | 0.9002 | `Statistical Parity` |
+| **Vulnerability_scanner** | Application & Payload-Centric | 894 | 0.9759 | 0.9730 | -0.0028 | 0.9737 | `Statistical Parity` |
+| **Password** | Application & Payload-Centric | 886 | 0.8990 | 0.8953 | -0.0037 | 0.8675 | `Statistical Parity` |
+| **SQL_injection** | Application & Payload-Centric | 915 | 0.8963 | 0.8901 | -0.0062 | 0.8601 | `Raw Baseline Preferred` |
+| **DDoS_HTTP** | Volumetric / Network Flood | 937 | 0.8571 | 0.8507 | -0.0065 | 0.8274 | `Raw Baseline Preferred` |
+| **Port_Scanning** | Volumetric / Network Flood | 893 | 0.9511 | 0.9444 | -0.0068 | 0.9374 | `Raw Baseline Preferred` |
+| **Fingerprinting** | Stealth Behavioral / Recon | 89 | 0.8889 | 0.8750 | -0.0139 | 0.8625 | `Raw Baseline Preferred` |
+| **Ransomware** | Application & Payload-Centric | 969 | 0.9385 | 0.9176 | -0.0209 | 0.9190 | `Raw Baseline Preferred` |
 
 ---
 
