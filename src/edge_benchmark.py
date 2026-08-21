@@ -1,7 +1,8 @@
 """
-Milestone 7: Edge-Resource Benchmarking Suite
-Quantifies the fundamental trade-off between Detection Performance (Accuracy, Macro-F1)
-and Computational Resource Overhead (Inference Latency, RAM, Storage Footprint).
+Milestone 7 / Phase 2: High-Resolution Edge-Resource Benchmarking Suite
+Quantifies the Pareto trade-off between Detection Performance (Accuracy, Macro-F1)
+and Computational Resource Overhead (Inference Latency Mean +- Std, Throughput, Footprint).
+Uses time.perf_counter() across 5 repeated runs with tight statistical profiling.
 """
 
 import os
@@ -15,7 +16,6 @@ from sklearn.ensemble import RandomForestClassifier
 from xgboost import XGBClassifier
 from sklearn.metrics import accuracy_score, f1_score
 from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import LabelEncoder
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
@@ -54,7 +54,7 @@ class EdgeResourceBenchmarker:
         }
         
     def build_and_benchmark_configurations(self, splits: dict):
-        print("\n--- Benchmarking Edge Configurations across 5 Repeated Runs ---")
+        print("\n--- Benchmarking Edge Configurations: 5 Repeated Runs with High-Resolution Timers ---")
         
         # Configuration Definitions
         configs_to_test = [
@@ -63,7 +63,7 @@ class EdgeResourceBenchmarker:
                 "name": "Config 1: Full-Precision Twin + Heavy RF (150 trees)",
                 "feature_space": "fused",
                 "model": RandomForestClassifier(n_estimators=150, max_depth=20, n_jobs=-1, random_state=self.random_state),
-                "twin_overhead_ms": 0.35, # Twin inference overhead
+                "twin_overhead_ms": 0.350, # Sequence prediction overhead
                 "twin_size_kb": 120.0
             },
             {
@@ -71,7 +71,7 @@ class EdgeResourceBenchmarker:
                 "name": "Config 2: Quantized Twin + Standard RF (100 trees)",
                 "feature_space": "fused",
                 "model": RandomForestClassifier(n_estimators=100, max_depth=16, n_jobs=-1, random_state=self.random_state),
-                "twin_overhead_ms": 0.12, # Quantized TFLite overhead
+                "twin_overhead_ms": 0.120, # Quantized inference overhead
                 "twin_size_kb": 35.0
             },
             {
@@ -79,7 +79,7 @@ class EdgeResourceBenchmarker:
                 "name": "Config 3: Quantized Twin + Pruned Edge RF (30 trees)",
                 "feature_space": "fused",
                 "model": RandomForestClassifier(n_estimators=30, max_depth=10, n_jobs=-1, random_state=self.random_state),
-                "twin_overhead_ms": 0.12,
+                "twin_overhead_ms": 0.120,
                 "twin_size_kb": 35.0
             },
             {
@@ -109,21 +109,26 @@ class EdgeResourceBenchmarker:
             acc = accuracy_score(y_test, y_pred)
             macro_f1 = f1_score(y_test, y_pred, average="macro", zero_division=0)
             
-            # Latency Measurement: 5 runs of 500 samples
+            # High-Resolution Latency Measurement: 5 runs x 500 samples
+            n_runs = 5
             n_samples = 500
-            test_sub = X_test[:n_samples]
-            latencies = []
+            run_latencies = []
             
-            for _ in range(5):
+            # Warmup
+            _ = model.predict(X_test[:50])
+            
+            for run_idx in range(n_runs):
+                sub_samples = X_test[run_idx*n_samples:(run_idx+1)*n_samples]
                 t0 = time.perf_counter()
-                _ = model.predict(test_sub)
+                _ = model.predict(sub_samples)
                 t1 = time.perf_counter()
-                latency_per_sample_ms = ((t1 - t0) / n_samples) * 1000.0 + cfg["twin_overhead_ms"]
-                latencies.append(latency_per_sample_ms)
                 
-            avg_latency_ms = float(np.mean(latencies))
-            std_latency_ms = float(np.std(latencies))
-            throughput = 1000.0 / avg_latency_ms if avg_latency_ms > 0 else 0
+                per_sample_ms = ((t1 - t0) / len(sub_samples)) * 1000.0 + cfg["twin_overhead_ms"]
+                run_latencies.append(per_sample_ms)
+                
+            mean_latency = float(np.mean(run_latencies))
+            std_latency = float(np.std(run_latencies))
+            throughput = 1000.0 / mean_latency if mean_latency > 0 else 0
             
             # Measure model size in KB
             temp_path = f"models/temp_{cfg['id']}.joblib"
@@ -137,12 +142,13 @@ class EdgeResourceBenchmarker:
                 "Feature Space": "Twin-Augmented" if is_fused else "Raw Telemetry",
                 "Accuracy (%)": round(acc * 100, 2),
                 "Macro-F1": round(macro_f1, 4),
-                "Avg Latency (ms/sample)": round(avg_latency_ms, 3),
+                "Avg Latency (ms/sample)": round(mean_latency, 3),
+                "Latency Std (ms)": round(std_latency, 4),
                 "Throughput (samples/sec)": round(throughput, 1),
                 "Total Footprint (KB)": round(model_size_kb, 1)
             }
             self.results.append(res_entry)
-            print(f"--> Acc: {acc*100:.2f}% | F1: {macro_f1:.4f} | Latency: {avg_latency_ms:.3f}ms | Size: {model_size_kb:.1f} KB")
+            print(f"--> Acc: {acc*100:.2f}% | F1: {macro_f1:.4f} | Latency: {mean_latency:.3f} +- {std_latency:.4f} ms | Size: {model_size_kb:.1f} KB")
 
     def save_and_plot(self, output_csv="results/benchmark_results.csv", output_plot="results/edge_tradeoff_chart.png"):
         os.makedirs(os.path.dirname(output_csv), exist_ok=True)
@@ -157,7 +163,7 @@ class EdgeResourceBenchmarker:
         for _, row in results_df.iterrows():
             axes[0].scatter(row["Avg Latency (ms/sample)"], row["Macro-F1"], s=row["Total Footprint (KB)"] * 0.4, 
                             alpha=0.75, edgecolors='black', linewidth=1.5, label=row["Configuration"][:25] + "...")
-            axes[0].annotate(f"{row['Macro-F1']:.3f}\n({row['Avg Latency (ms/sample)']:.2f}ms)", 
+            axes[0].annotate(f"{row['Macro-F1']:.3f}\n({row['Avg Latency (ms/sample)']:.3f}ms)", 
                              (row["Avg Latency (ms/sample)"], row["Macro-F1"]),
                              textcoords="offset points", xytext=(0, 10), ha='center', fontsize=8, fontweight='bold')
                              
@@ -173,13 +179,13 @@ class EdgeResourceBenchmarker:
         ax2_twin = ax2.twinx()
         
         w = 0.35
-        b1 = ax2.bar(x - w/2, results_df["Avg Latency (ms/sample)"], w, label='Latency (ms)', color='#6366f1')
+        b1 = ax2.bar(x - w/2, results_df["Avg Latency (ms/sample)"], w, yerr=results_df["Latency Std (ms)"], capsize=4, label='Latency (ms)', color='#6366f1')
         b2 = ax2_twin.bar(x + w/2, results_df["Total Footprint (KB)"], w, label='Model Size (KB)', color='#ec4899')
         
         ax2.set_xlabel('Edge Configuration', fontweight='bold', fontsize=10)
         ax2.set_ylabel('Inference Latency (ms)', fontweight='bold', color='#6366f1')
         ax2_twin.set_ylabel('Model Footprint (KB)', fontweight='bold', color='#ec4899')
-        ax2.set_title('Edge Resource Demands (Latency vs. Footprint)', fontweight='bold', fontsize=11)
+        ax2.set_title('Edge Resource Demands (Latency with Error Bars vs. Footprint)', fontweight='bold', fontsize=11)
         ax2.set_xticks(x)
         ax2.set_xticklabels([f"Config {i+1}" for i in range(len(results_df))], fontweight='bold')
         ax2.grid(axis='y', linestyle=':', alpha=0.4)
