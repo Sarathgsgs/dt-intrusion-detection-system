@@ -575,11 +575,24 @@ export default function App() {
         {activeTab === 'xai' && (
           <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr', gap: '1.5rem' }}>
             <div className="glass-panel" style={{ padding: '1.5rem' }}>
-              <h2 style={{ fontSize: '1.2rem', fontWeight: 700, marginBottom: '0.5rem' }}>
-                Local SHAP Feature Attributions
-              </h2>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+                <h2 style={{ fontSize: '1.2rem', fontWeight: 700 }}>
+                  Local SHAP Feature Attributions
+                </h2>
+                <span style={{
+                  background: 'rgba(56, 189, 248, 0.15)',
+                  color: '#38bdf8',
+                  border: '1px solid rgba(56, 189, 248, 0.3)',
+                  padding: '3px 10px',
+                  borderRadius: '6px',
+                  fontSize: '0.72rem',
+                  fontWeight: 700
+                }}>
+                  ● LIVE LOCAL SHAP ATTRIBUTION
+                </span>
+              </div>
               <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '1.5rem' }}>
-                Visualizing exact feature impact on the predicted attack classification.
+                Real-time feature attributions computed per incoming alert by SHAP TreeExplainer.
               </p>
 
               {selectedAlert?.shap_explanation ? (
@@ -649,9 +662,22 @@ export default function App() {
         {activeTab === 'benchmarks' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
             <div className="glass-panel" style={{ padding: '1.5rem' }}>
-              <h2 style={{ fontSize: '1.25rem', fontWeight: 800, marginBottom: '0.5rem' }}>
-                Resource-Aware Edge Trade-Off Benchmarks
-              </h2>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+                <h2 style={{ fontSize: '1.25rem', fontWeight: 800 }}>
+                  Resource-Aware Edge Trade-Off Benchmarks
+                </h2>
+                <span style={{
+                  background: 'rgba(245, 158, 11, 0.15)',
+                  color: '#f59e0b',
+                  border: '1px solid rgba(245, 158, 11, 0.3)',
+                  padding: '3px 10px',
+                  borderRadius: '6px',
+                  fontSize: '0.72rem',
+                  fontWeight: 700
+                }}>
+                  📊 OFFLINE EMPIRICAL BENCHMARK (5-Run Profile)
+                </span>
+              </div>
               <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '1.5rem' }}>
                 Experimental evaluation across 4 Edge-IIoT deployment configurations measuring Latency (ms), Storage Size (KB), and Macro-F1.
               </p>
@@ -707,11 +733,24 @@ export default function App() {
         {/* TAB 4: IDS ARCHITECTURE COMPARISON */}
         {activeTab === 'models' && (
           <div className="glass-panel" style={{ padding: '1.5rem' }}>
-            <h2 style={{ fontSize: '1.25rem', fontWeight: 800, marginBottom: '0.5rem' }}>
-              Baseline vs. Twin-Deviation vs. Twin-Augmented IDS Comparison
-            </h2>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+              <h2 style={{ fontSize: '1.25rem', fontWeight: 800 }}>
+                Baseline vs. Twin-Deviation vs. Twin-Augmented IDS Comparison
+              </h2>
+              <span style={{
+                background: 'rgba(168, 85, 247, 0.15)',
+                color: '#a855f7',
+                border: '1px solid rgba(168, 85, 247, 0.3)',
+                padding: '3px 10px',
+                borderRadius: '6px',
+                fontSize: '0.72rem',
+                fontWeight: 700
+              }}>
+                📈 OFFLINE TEST EVALUATION (13,999 Samples)
+              </span>
+            </div>
             <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '1.5rem' }}>
-              Direct experimental comparison across 6 classifiers trained on raw telemetry vs. residual deviation spaces.
+              Direct experimental comparison across 6 classifiers trained on raw telemetry vs. residual deviation spaces on held-out test data.
             </p>
 
             <div style={{ height: '340px', width: '100%', marginBottom: '2rem' }}>
