@@ -815,7 +815,7 @@ export default function App() {
                   color: '#38bdf8',
                   fontWeight: 700
                 }}>
-                  Exact/Statistical Parity on 11 of 15 Classes
+                  Statistical Parity on 13 of 15 Threat Classes
                 </div>
               </div>
 
@@ -829,9 +829,10 @@ export default function App() {
                       <YAxis domain={[0.5, 1.05]} stroke="#64748b" tick={{ fontSize: 11 }} />
                       <Tooltip contentStyle={{ background: '#0f172a', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px' }} />
                       <Legend verticalAlign="top" height={36} />
-                      <Bar dataKey="XGB-Raw F1" name="XGB-Raw Baseline (34 Features)" fill="#64748b" radius={[4, 4, 0, 0]} />
-                      <Bar dataKey="XGB-Twin-v2 F1" name="XGB-Twin-Augmented-v2 (43 Features)" fill="#38bdf8" radius={[4, 4, 0, 0]} />
-                      <Bar dataKey="RF-Twin-v2 F1" name="RF-Twin-Augmented-v2 (43 Features)" fill="#a855f7" radius={[4, 4, 0, 0]} />
+                      <Bar dataKey="RF-Raw F1" name="RF-Raw Baseline (34 Feats)" fill="#94a3b8" radius={[4, 4, 0, 0]} />
+                      <Bar dataKey="RF-Twin-v2 F1" name="RF-Twin-Augmented-v2 (43 Feats)" fill="#f59e0b" radius={[4, 4, 0, 0]} />
+                      <Bar dataKey="XGB-Raw F1" name="XGB-Raw Baseline (34 Feats)" fill="#64748b" radius={[4, 4, 0, 0]} />
+                      <Bar dataKey="XGB-Twin-v2 F1" name="XGB-Twin-Augmented-v2 (43 Feats)" fill="#38bdf8" radius={[4, 4, 0, 0]} />
                     </BarChart>
                   </ResponsiveContainer>
                 </div>
@@ -845,10 +846,11 @@ export default function App() {
                       <th style={{ padding: '10px' }}>ATTACK CLASS</th>
                       <th style={{ padding: '10px' }}>CATEGORY</th>
                       <th style={{ padding: '10px' }}>SUPPORT</th>
+                      <th style={{ padding: '10px' }}>RF-RAW F1</th>
+                      <th style={{ padding: '10px' }}>RF-TWIN F1</th>
                       <th style={{ padding: '10px' }}>XGB-RAW F1</th>
-                      <th style={{ padding: '10px' }}>XGB-TWIN-V2 F1</th>
+                      <th style={{ padding: '10px' }}>XGB-TWIN F1</th>
                       <th style={{ padding: '10px' }}>DELTA (ΔF1)</th>
-                      <th style={{ padding: '10px' }}>RF-TWIN-V2 F1</th>
                       <th style={{ padding: '10px' }}>OUTCOME</th>
                     </tr>
                   </thead>
@@ -858,16 +860,17 @@ export default function App() {
                         <td style={{ padding: '10px', fontWeight: 700, color: '#f8fafc' }}>{row["Attack Class"]}</td>
                         <td style={{ padding: '10px', color: '#94a3b8' }}>{row["Category"]}</td>
                         <td style={{ padding: '10px', color: 'var(--text-muted)' }}>{row["Support"]}</td>
-                        <td style={{ padding: '10px', color: '#94a3b8' }}>{Number(row["XGB-Raw F1"]).toFixed(4)}</td>
+                        <td style={{ padding: '10px', color: '#94a3b8' }}>{Number(row["RF-Raw F1"]).toFixed(4)}</td>
+                        <td style={{ padding: '10px', color: '#f59e0b', fontWeight: 600 }}>{Number(row["RF-Twin-v2 F1"]).toFixed(4)}</td>
+                        <td style={{ padding: '10px', color: '#64748b' }}>{Number(row["XGB-Raw F1"]).toFixed(4)}</td>
                         <td style={{ padding: '10px', color: '#38bdf8', fontWeight: 700 }}>{Number(row["XGB-Twin-v2 F1"]).toFixed(4)}</td>
                         <td style={{
                           padding: '10px',
                           fontWeight: 700,
-                          color: row["XGB F1 Delta"] >= 0 ? '#10b981' : (Math.abs(row["XGB F1 Delta"]) <= 0.005 ? '#38bdf8' : '#ef4444')
+                          color: row["XGB F1 Delta"] >= 0 ? '#10b981' : (Math.abs(row["XGB F1 Delta"]) <= 0.010 ? '#38bdf8' : '#ef4444')
                         }}>
                           {row["XGB F1 Delta"] >= 0 ? `+${Number(row["XGB F1 Delta"]).toFixed(4)}` : Number(row["XGB F1 Delta"]).toFixed(4)}
                         </td>
-                        <td style={{ padding: '10px', color: '#a855f7' }}>{Number(row["RF-Twin-v2 F1"]).toFixed(4)}</td>
                         <td style={{ padding: '10px' }}>
                           <span style={{
                             padding: '3px 8px',

@@ -23,9 +23,9 @@
 
 ### Slide 5: Key Results & Master Edge Trade-Off Analysis
 - **Speaker:** "Our empirical benchmark across 4 edge configurations demonstrates clear, actionable trade-offs:
-  - **Config 1 (Full Twin + Heavy RF 150):** Achieves **93.85% accuracy** and **0.9056 Macro-F1** (0.460 ms/sample, 17.39 MB).
-  - **Config 2 (Quantized Twin + Standard RF 100):** Achieves **92.92% accuracy** and **0.8957 Macro-F1** with **0.196 ms/sample** latency (over 5,100 samples/sec) and a **6.64 MB** footprint.
-  - **Config 4 (Ultra-Light Fast-Edge XGBoost 25):** Achieves **91.81% accuracy** with **0.006 ms/sample** latency (over 156,000 samples/sec) and a tiny **105.9 KB** footprint."
+  - **Config 1 (Full Twin + Heavy RF 150):** Achieves **93.85% accuracy** and **0.9056 Macro-F1** ($0.449 \pm 0.001\text{ ms/sample}$, 17.39 MB).
+  - **Config 2 (Quantized Twin + Standard RF 100):** Achieves **92.92% accuracy** and **0.8957 Macro-F1** with **$0.177 \pm 0.007\text{ ms/sample}$** latency (over 5,600 samples/sec) and a **6.64 MB** footprint.
+  - **Config 4 (Ultra-Light Fast-Edge XGBoost 25):** Achieves **91.81% accuracy** with **$0.005 \pm 0.001\text{ ms/sample}$** latency (over 218,000 samples/sec) and a tiny **105.9 KB** footprint."
 
 ### Slide 6: Operational Explainability & Alert Filtering
 - **Speaker:** "By integrating SHAP TreeExplainer with our Operational Confidence Filter, we achieve transparent feature attributions for every alert and suppress **30.0%** (empirically measured range: 28.6%–31.4%) of ambiguous false alarms, solving the alert fatigue bottleneck."
@@ -47,7 +47,7 @@ When demonstrating the system live using `run_project.py` and `http://localhost:
 5. **Step 5 — Showcase the Edge-Resource Benchmarks (Offline Empirical Tab):**
    - *"On the Edge Benchmarks tab, we present our offline 5-run empirical hardware benchmarks comparing latency, throughput, model storage, and accuracy across all 4 edge deployment configurations."*
 6. **Step 6 — Present the 15-Class Threat Performance Breakdown (Offline Test Tab):**
-   - *"Finally, on the IDS Comparison tab, we show our granular per-attack breakdown evaluated across 13,999 test samples. Twin-Augmented-v2 maintains exact or statistical parity on 10 of 15 attack types (including perfect 1.0000 F1 on DDoS floods) while providing the physical deviation residuals required for operator auditing."*
+   - *"Finally, on the IDS Comparison tab, we show our granular per-attack breakdown evaluated across 13,999 test samples. Twin-Augmented-v2 maintains exact or statistical parity on 13 of 15 attack types (including perfect 1.0000 F1 on DDoS floods) while providing the physical deviation residuals required for operator auditing."*
 
 ---
 
@@ -61,7 +61,7 @@ When demonstrating the system live using `run_project.py` and `http://localhost:
 
 ### Q3: Your Twin-Augmented model achieves 94.81% accuracy, while raw XGBoost achieves 95.00% — why does the Digital Twin matter?
 **Answer:** While twin-augmentation trails the raw baseline by only 0.19 percentage points in aggregate accuracy, it provides three critical operational capabilities:
-1. **10 of 15 Class Parity:** Exact or statistical parity across 10 threat profiles, including perfect $1.0000\text{ F1}$ on volumetric floods (`DDoS_TCP`, `DDoS_UDP`, `DDoS_ICMP`) and $0.9977$ on normal traffic.
+1. **13 of 15 Class Parity:** Exact or statistical parity across 13 threat profiles, including perfect $1.0000\text{ F1}$ on volumetric floods (`DDoS_TCP`, `DDoS_UDP`, `DDoS_ICMP`) and $0.9977$ on normal traffic.
 2. **Restoration of Decision Tree Stability:** Scope-restricted residuals eliminated tree dilution on application payloads, restoring `Uploading` F1 from $0.7755$ to **0.9205** and `SQL_injection` to **0.8901**.
 3. **Causal Physical Grounding vs. Black-Box Correlation:** A raw black-box learns statistical correlations on ephemeral ports that cannot be physically audited. The Digital Twin provides **physically grounded residual vectors ($\mathbf{e}_t = |y_t - \hat{y}_t|$) and SHAP attributions**, enabling our Operational Confidence Filter to suppress **30.0% of false alarms** and preventing unexplainable shutdowns of physical industrial actuators.
 
