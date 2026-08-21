@@ -239,6 +239,26 @@ def get_benchmarks():
 def get_model_comparison():
     return MODEL_COMPARISON_DATA
 
+@app.get("/api/models/per-attack")
+def get_per_attack():
+    return [
+        {"Attack Class": "DDoS_TCP", "Category": "Volumetric / Network Flood", "Support": 909, "XGB-Raw F1": 1.0, "XGB-Twin-v2 F1": 1.0, "XGB F1 Delta": 0.0, "RF-Twin-v2 F1": 1.0, "Outcome": "Exact Parity"},
+        {"Attack Class": "DDoS_UDP", "Category": "Volumetric / Network Flood", "Support": 1286, "XGB-Raw F1": 1.0, "XGB-Twin-v2 F1": 1.0, "XGB F1 Delta": 0.0, "RF-Twin-v2 F1": 1.0, "Outcome": "Exact Parity"},
+        {"Attack Class": "Normal", "Category": "Normal Baseline", "Support": 2156, "XGB-Raw F1": 0.9979, "XGB-Twin-v2 F1": 0.9979, "XGB F1 Delta": 0.0, "RF-Twin-v2 F1": 0.9977, "Outcome": "Exact Parity"},
+        {"Attack Class": "DDoS_ICMP", "Category": "Volumetric / Network Flood", "Support": 1250, "XGB-Raw F1": 0.9996, "XGB-Twin-v2 F1": 0.9996, "XGB F1 Delta": 0.0, "RF-Twin-v2 F1": 0.9984, "Outcome": "Statistical Parity"},
+        {"Attack Class": "Backdoor", "Category": "Application & Payload-Centric", "Support": 904, "XGB-Raw F1": 0.9848, "XGB-Twin-v2 F1": 0.9848, "XGB F1 Delta": 0.0, "RF-Twin-v2 F1": 0.9781, "Outcome": "Statistical Parity"},
+        {"Attack Class": "Vulnerability_scanner", "Category": "Application & Payload-Centric", "Support": 894, "XGB-Raw F1": 0.9759, "XGB-Twin-v2 F1": 0.9758, "XGB F1 Delta": -0.0001, "RF-Twin-v2 F1": 0.9748, "Outcome": "Statistical Parity"},
+        {"Attack Class": "XSS", "Category": "Application & Payload-Centric", "Support": 892, "XGB-Raw F1": 0.9084, "XGB-Twin-v2 F1": 0.9074, "XGB F1 Delta": -0.001, "RF-Twin-v2 F1": 0.8824, "Outcome": "Statistical Parity"},
+        {"Attack Class": "Password", "Category": "Application & Payload-Centric", "Support": 886, "XGB-Raw F1": 0.899, "XGB-Twin-v2 F1": 0.8978, "XGB F1 Delta": -0.0011, "RF-Twin-v2 F1": 0.8521, "Outcome": "Statistical Parity"},
+        {"Attack Class": "SQL_injection", "Category": "Application & Payload-Centric", "Support": 915, "XGB-Raw F1": 0.8963, "XGB-Twin-v2 F1": 0.8932, "XGB F1 Delta": -0.0032, "RF-Twin-v2 F1": 0.8707, "Outcome": "Statistical Parity"},
+        {"Attack Class": "DDoS_HTTP", "Category": "Volumetric / Network Flood", "Support": 937, "XGB-Raw F1": 0.8571, "XGB-Twin-v2 F1": 0.8539, "XGB F1 Delta": -0.0032, "RF-Twin-v2 F1": 0.825, "Outcome": "Statistical Parity"},
+        {"Attack Class": "Uploading", "Category": "Application & Payload-Centric", "Support": 911, "XGB-Raw F1": 0.9221, "XGB-Twin-v2 F1": 0.9172, "XGB F1 Delta": -0.0049, "RF-Twin-v2 F1": 0.9009, "Outcome": "Statistical Parity"},
+        {"Attack Class": "Port_Scanning", "Category": "Volumetric / Network Flood", "Support": 893, "XGB-Raw F1": 0.9511, "XGB-Twin-v2 F1": 0.9411, "XGB F1 Delta": -0.01, "RF-Twin-v2 F1": 0.9397, "Outcome": "Raw Baseline Preferred"},
+        {"Attack Class": "Fingerprinting", "Category": "Stealth Behavioral / Recon", "Support": 89, "XGB-Raw F1": 0.8889, "XGB-Twin-v2 F1": 0.875, "XGB F1 Delta": -0.0139, "RF-Twin-v2 F1": 0.8466, "Outcome": "Raw Baseline Preferred"},
+        {"Attack Class": "Ransomware", "Category": "Application & Payload-Centric", "Support": 969, "XGB-Raw F1": 0.9385, "XGB-Twin-v2 F1": 0.918, "XGB F1 Delta": -0.0205, "RF-Twin-v2 F1": 0.915, "Outcome": "Raw Baseline Preferred"},
+        {"Attack Class": "MITM", "Category": "Stealth Behavioral / Recon", "Support": 108, "XGB-Raw F1": 0.5806, "XGB-Twin-v2 F1": 0.5538, "XGB F1 Delta": -0.0268, "RF-Twin-v2 F1": 0.5758, "Outcome": "Raw Baseline Preferred"}
+    ]
+
 @app.get("/api/stats")
 def get_stats():
     return {

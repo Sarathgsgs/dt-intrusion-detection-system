@@ -29,6 +29,7 @@ export default function App() {
   
   const [benchmarkData, setBenchmarkData] = useState([]);
   const [modelComparisonData, setModelComparisonData] = useState([]);
+  const [perAttackData, setPerAttackData] = useState([]);
   const [stats, setStats] = useState({
     total_inspected: 0,
     passed_alerts: 0,
@@ -41,13 +42,17 @@ export default function App() {
   // Fetch static data (benchmarks & model comparisons)
   const fetchStaticData = async () => {
     try {
-      const [benchRes, compRes, statsRes] = await Promise.all([
+      const [benchRes, compRes, perAttackRes, statsRes] = await Promise.all([
         axios.get(`${API_BASE}/api/benchmarks`),
         axios.get(`${API_BASE}/api/models/comparison`),
+        axios.get(`${API_BASE}/api/models/per-attack`).catch(() => ({ data: [] })),
         axios.get(`${API_BASE}/api/stats`)
       ]);
       setBenchmarkData(benchRes.data);
       setModelComparisonData(compRes.data);
+      if (perAttackRes.data && perAttackRes.data.length > 0) {
+        setPerAttackData(perAttackRes.data);
+      }
       if (statsRes.data.filter_stats) {
         setStats(statsRes.data.filter_stats);
       }
@@ -724,7 +729,7 @@ export default function App() {
               </ResponsiveContainer>
             </div>
 
-            <div style={{ overflowX: 'auto' }}>
+            <div style={{ overflowX: 'auto', marginBottom: '2.5rem' }}>
               <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.85rem' }}>
                 <thead>
                   <tr style={{ borderBottom: '1px solid var(--border-subtle)', color: 'var(--text-muted)' }}>
@@ -749,6 +754,98 @@ export default function App() {
                   ))}
                 </tbody>
               </table>
+            </div>
+
+            {/* Sub-Panel: 15-Class Fine-Grained Per-Attack Breakdown */}
+            <div style={{ borderTop: '1px solid var(--border-subtle)', paddingTop: '2rem' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                <div>
+                  <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: '#f8fafc' }}>
+                    15-Class Fine-Grained Threat Performance Breakdown
+                  </h3>
+                  <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                    Granular classification F1-scores across all 15 attack types evaluated on 13,999 stratified test samples.
+                  </p>
+                </div>
+                <div style={{
+                  background: 'rgba(56, 189, 248, 0.12)',
+                  border: '1px solid rgba(56, 189, 248, 0.3)',
+                  padding: '6px 14px',
+                  borderRadius: '8px',
+                  fontSize: '0.8rem',
+                  color: '#38bdf8',
+                  fontWeight: 700
+                }}>
+                  Exact/Statistical Parity on 11 of 15 Classes
+                </div>
+              </div>
+
+              {/* Grouped Comparison Bar Chart */}
+              {perAttackData.length > 0 && (
+                <div style={{ height: '360px', width: '100%', marginBottom: '2rem' }}>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={perAttackData} margin={{ top: 20, right: 30, left: 20, bottom: 40 }}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
+                      <XAxis dataKey="Attack Class" stroke="#64748b" tick={{ fontSize: 10 }} angle={-30} textAnchor="end" />
+                      <YAxis domain={[0.5, 1.05]} stroke="#64748b" tick={{ fontSize: 11 }} />
+                      <Tooltip contentStyle={{ background: '#0f172a', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px' }} />
+                      <Legend verticalAlign="top" height={36} />
+                      <Bar dataKey="XGB-Raw F1" name="XGB-Raw Baseline (34 Features)" fill="#64748b" radius={[4, 4, 0, 0]} />
+                      <Bar dataKey="XGB-Twin-v2 F1" name="XGB-Twin-Augmented-v2 (43 Features)" fill="#38bdf8" radius={[4, 4, 0, 0]} />
+                      <Bar dataKey="RF-Twin-v2 F1" name="RF-Twin-Augmented-v2 (43 Features)" fill="#a855f7" radius={[4, 4, 0, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              )}
+
+              {/* Per-Attack Interactive Table */}
+              <div style={{ overflowX: 'auto' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.82rem' }}>
+                  <thead>
+                    <tr style={{ borderBottom: '1px solid var(--border-subtle)', color: 'var(--text-muted)' }}>
+                      <th style={{ padding: '10px' }}>ATTACK CLASS</th>
+                      <th style={{ padding: '10px' }}>CATEGORY</th>
+                      <th style={{ padding: '10px' }}>SUPPORT</th>
+                      <th style={{ padding: '10px' }}>XGB-RAW F1</th>
+                      <th style={{ padding: '10px' }}>XGB-TWIN-V2 F1</th>
+                      <th style={{ padding: '10px' }}>DELTA (ΔF1)</th>
+                      <th style={{ padding: '10px' }}>RF-TWIN-V2 F1</th>
+                      <th style={{ padding: '10px' }}>OUTCOME</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {perAttackData.map((row, idx) => (
+                      <tr key={idx} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)', background: idx % 2 === 0 ? 'rgba(255,255,255,0.01)' : 'transparent' }}>
+                        <td style={{ padding: '10px', fontWeight: 700, color: '#f8fafc' }}>{row["Attack Class"]}</td>
+                        <td style={{ padding: '10px', color: '#94a3b8' }}>{row["Category"]}</td>
+                        <td style={{ padding: '10px', color: 'var(--text-muted)' }}>{row["Support"]}</td>
+                        <td style={{ padding: '10px', color: '#94a3b8' }}>{Number(row["XGB-Raw F1"]).toFixed(4)}</td>
+                        <td style={{ padding: '10px', color: '#38bdf8', fontWeight: 700 }}>{Number(row["XGB-Twin-v2 F1"]).toFixed(4)}</td>
+                        <td style={{
+                          padding: '10px',
+                          fontWeight: 700,
+                          color: row["XGB F1 Delta"] >= 0 ? '#10b981' : (Math.abs(row["XGB F1 Delta"]) <= 0.005 ? '#38bdf8' : '#ef4444')
+                        }}>
+                          {row["XGB F1 Delta"] >= 0 ? `+${Number(row["XGB F1 Delta"]).toFixed(4)}` : Number(row["XGB F1 Delta"]).toFixed(4)}
+                        </td>
+                        <td style={{ padding: '10px', color: '#a855f7' }}>{Number(row["RF-Twin-v2 F1"]).toFixed(4)}</td>
+                        <td style={{ padding: '10px' }}>
+                          <span style={{
+                            padding: '3px 8px',
+                            borderRadius: '4px',
+                            fontSize: '0.72rem',
+                            fontWeight: 700,
+                            background: row["Outcome"] === 'Exact Parity' ? 'rgba(16, 185, 129, 0.2)' : (row["Outcome"] === 'Statistical Parity' ? 'rgba(56, 189, 248, 0.2)' : 'rgba(100, 116, 139, 0.2)'),
+                            color: row["Outcome"] === 'Exact Parity' ? '#10b981' : (row["Outcome"] === 'Statistical Parity' ? '#38bdf8' : '#94a3b8')
+                          }}>
+                            {row["Outcome"]}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
         )}

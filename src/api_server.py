@@ -186,6 +186,16 @@ def get_ids_comparison():
     df = pd.read_csv(csv_path)
     return df.to_dict(orient="records")
 
+@app.get("/api/models/per-attack")
+def get_per_attack_breakdown():
+    csv_path = "results/per_attack_comparison.csv"
+    if not os.path.exists(csv_path):
+        csv_path = "results/per_attack_f1.csv"
+    if not os.path.exists(csv_path):
+        raise HTTPException(status_code=404, detail="Per-attack metrics not found")
+    df = pd.read_csv(csv_path)
+    return df.to_dict(orient="records")
+
 @app.get("/api/stream/step")
 def stream_single_step():
     global pipeline
