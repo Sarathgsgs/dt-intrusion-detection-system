@@ -1,6 +1,6 @@
 """
 Phase B / Milestone 6: SHAP Local & Global Explainability Module
-Calculates exact Shapley additive feature attributions for Twin-Augmented-v2 model.
+Calculates exact Shapley additive feature attributions for Twin-Augmented and Baseline models.
 """
 
 import os
@@ -14,10 +14,29 @@ import matplotlib.pyplot as plt
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 class XAIExplainer:
-    def __init__(self, model_path: str = "models/xgb_fused.pkl", model_dir: str = "models"):
+    def __init__(
+        self, 
+        model_path: str = "models/xgb_fused.pkl", 
+        features_path_or_dir: str = "models",
+        label_encoder_path: str = None,
+        model_dir: str = "models"
+    ):
         self.model = joblib.load(model_path)
-        self.label_encoder = joblib.load(os.path.join(model_dir, "label_encoder.pkl"))
-        self.fused_features = joblib.load(os.path.join(model_dir, "fused_features.pkl"))
+        
+        # Resolve label encoder path
+        if label_encoder_path and os.path.exists(label_encoder_path):
+            self.label_encoder = joblib.load(label_encoder_path)
+        else:
+            self.label_encoder = joblib.load(os.path.join(model_dir, "label_encoder.pkl"))
+            
+        # Resolve feature names
+        if features_path_or_dir.endswith(".pkl") and os.path.exists(features_path_or_dir):
+            self.fused_features = joblib.load(features_path_or_dir)
+        elif os.path.exists(os.path.join(model_dir, "fused_features.pkl")):
+            self.fused_features = joblib.load(os.path.join(model_dir, "fused_features.pkl"))
+        else:
+            self.fused_features = joblib.load(os.path.join(model_dir, "raw_features.pkl"))
+            
         self.explainer = shap.TreeExplainer(self.model)
         
     def explain_sample(self, feature_vector: np.ndarray, top_k: int = 5) -> dict:
@@ -45,7 +64,7 @@ class XAIExplainer:
         
         top_attributions = []
         for idx in sorted_indices:
-            feat_name = self.fused_features[idx]
+            feat_name = self.fused_features[idx] if idx < len(self.fused_features) else f"feature_{idx}"
             val = float(feature_vector[0, idx])
             sv = float(class_shap[idx])
             top_attributions.append({
@@ -61,61 +80,10 @@ class XAIExplainer:
             "top_features": top_attributions
         }
 
-def generate_global_shap_summary(
-    dev_csv: str = "data/deviation_dataset.csv",
-    output_plot_path: str = "results/shap_summary.png",
-    model_dir: str = "models",
-    n_samples: int = 500
-):
-    print("=" * 70)
-    print("  SHAP GLOBAL ATTRIBUTION SUMMARY (PHASE B / TWIN-AUGMENTED-V2)")
-    print("=" * 70)
-    
-    df = pd.read_csv(dev_csv)
-    raw_cols = joblib.load(os.path.join(model_dir, "raw_features.pkl"))
-    dev_cols = joblib.load(os.path.join(model_dir, "dev_features.pkl"))
-    fused_cols = list(raw_cols) + list(dev_cols)
-    
-    sample_df = df.sample(n=min(n_samples, len(df)), random_state=42)
-    X_sample = sample_df[fused_cols].values
-    
-    model = joblib.load(os.path.join(model_dir, "xgb_fused.pkl"))
-    explainer = shap.TreeExplainer(model)
-    
-    print(f"Computing TreeExplainer SHAP values for {X_sample.shape[0]} samples across {X_sample.shape[1]} features...")
-    shap_vals = explainer.shap_values(X_sample)
-    
-    if isinstance(shap_vals, list):
-        mean_abs_shap = np.mean([np.abs(sv) for sv in shap_vals], axis=0).mean(axis=0)
-    elif shap_vals.ndim == 3:
-        mean_abs_shap = np.abs(shap_vals).mean(axis=(0, 2))
-    else:
-        mean_abs_shap = np.abs(shap_vals).mean(axis=0)
-        
-    top_indices = np.argsort(mean_abs_shap)[::-1][:12]
-    top_features = [fused_cols[i] for i in top_indices]
-    top_scores = mean_abs_shap[top_indices]
-    
-    plt.figure(figsize=(12, 6))
-    colors = ['#38bdf8' if f.startswith('dev_') else '#6366f1' for f in reversed(top_features)]
-    
-    plt.barh(list(reversed(top_features)), list(reversed(top_scores)), color=colors)
-    plt.xlabel('Mean |SHAP Value| (Average Impact on Threat Classification)', fontweight='bold')
-    plt.title('Global Feature Importance Ranking: Raw Features vs. Continuous Deviation Signals', fontweight='bold', fontsize=12)
-    
-    from matplotlib.patches import Patch
-    legend_elements = [
-        Patch(facecolor='#6366f1', label='Raw Telemetry Feature'),
-        Patch(facecolor='#38bdf8', label='Continuous Physical Deviation (Twin Residual)')
-    ]
-    plt.legend(handles=legend_elements, loc='lower right')
-    plt.grid(axis='x', linestyle=':', alpha=0.6)
-    
-    plt.tight_layout()
-    os.makedirs(os.path.dirname(output_plot_path), exist_ok=True)
-    plt.savefig(output_plot_path, dpi=300)
-    plt.close()
-    print(f"[SUCCESS] Saved global SHAP summary plot to: {output_plot_path}")
+# Alias for backward compatibility
+ExplainabilityModule = XAIExplainer
 
 if __name__ == "__main__":
-    generate_global_shap_summary()
+    print("Testing XAIExplainer / ExplainabilityModule initialization...")
+    xai = ExplainabilityModule("models/xgb_raw.pkl", "models/raw_features.pkl", "models/label_encoder.pkl")
+    print("[SUCCESS] XAIExplainer loaded cleanly!")

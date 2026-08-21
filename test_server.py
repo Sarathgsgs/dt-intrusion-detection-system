@@ -6,6 +6,7 @@ endpoints = [
     "/api/stats",
     "/api/benchmarks",
     "/api/models/comparison",
+    "/api/models/per-attack",
     "/api/stream/step"
 ]
 
