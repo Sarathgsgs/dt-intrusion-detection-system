@@ -15,12 +15,23 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")
 from src.twin_model import DigitalTwin, CONTINUOUS_FEATURES
 
 class DeviationEngine:
-    def __init__(self, twin: DigitalTwin = None, model_dir: str = "models"):
-        if twin is not None:
+    def __init__(self, twin = None, model_dir: str = "models"):
+        if isinstance(twin, str):
+            model_dir = twin
+            self.twin = DigitalTwin.load(model_dir)
+        elif twin is not None:
             self.twin = twin
         else:
             self.twin = DigitalTwin.load(model_dir)
-        self.continuous_features = self.twin.feature_names
+            
+        if hasattr(self.twin, "feature_names") and self.twin.feature_names is not None:
+            self.continuous_features = list(self.twin.feature_names)
+        elif os.path.exists(os.path.join(model_dir, "dev_features.pkl")):
+            dev_feats = joblib.load(os.path.join(model_dir, "dev_features.pkl"))
+            self.continuous_features = [f.replace("dev_", "") for f in dev_feats]
+        else:
+            self.continuous_features = list(CONTINUOUS_FEATURES)
+            
         self.dev_feature_names = [f"dev_{col}" for col in self.continuous_features]
         
     def compute_deviations(self, df: pd.DataFrame) -> pd.DataFrame:

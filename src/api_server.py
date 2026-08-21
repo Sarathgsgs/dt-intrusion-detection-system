@@ -1,22 +1,22 @@
 """
-Milestone 8: FastAPI Backend Server
-Provides REST and SSE endpoints connecting Telemetry Simulator, Digital Twin,
-Deviation Engine, IDS Classifiers, SHAP Explainability, and Confidence Filter to the React UI.
+Milestone 8 / Phase G: FastAPI Streaming Backend Server
+Integrates Telemetry Simulator, Scope-Restricted Digital Twin, Targeted Deviation Engine, 
+Twin-Augmented-v2 IDS, SHAP TreeExplainer, and Operational Confidence Filter.
 """
 
 import os
 import sys
-import json
 import time
+import json
 import asyncio
 import joblib
 import numpy as np
 import pandas as pd
 from typing import Optional
+from contextlib import asynccontextmanager
 from fastapi import FastAPI, Query, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
-from pydantic import BaseModel
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
@@ -26,21 +26,6 @@ from src.deviation_engine import DeviationEngine
 from src.xai_module import ExplainabilityModule
 from src.confidence_filter import OperationalConfidenceFilter
 
-app = FastAPI(
-    title="Twin-Guided Explainable IDS Backend API",
-    description="Industrial IoT Intrusion Detection with Digital Twin Deviation & SHAP Explainability",
-    version="1.0.0"
-)
-
-# Enable CORS for React Frontend
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
 # Global State Container
 class SystemPipeline:
     def __init__(self):
@@ -48,11 +33,12 @@ class SystemPipeline:
         self.simulator = TelemetrySimulator("data/sampled_dataset.csv", delay_ms=0.0, loop=True)
         self.stream_generator = self.simulator.stream()
         self.twin = DigitalTwin.load("models")
-        self.deviation_engine = DeviationEngine("models")
-        self.ids_model = joblib.load("models/xgb_raw.pkl")
+        self.deviation_engine = DeviationEngine(twin=self.twin, model_dir="models")
+        self.ids_model = joblib.load("models/xgb_fused.pkl")
         self.label_encoder = joblib.load("models/label_encoder.pkl")
         self.raw_features = joblib.load("models/raw_features.pkl")
-        self.xai = ExplainabilityModule("models/xgb_raw.pkl", "models/raw_features.pkl", "models/label_encoder.pkl")
+        self.fused_features = joblib.load("models/fused_features.pkl")
+        self.xai = ExplainabilityModule("models/xgb_fused.pkl", "models/fused_features.pkl", "models/label_encoder.pkl")
         self.confidence_filter = OperationalConfidenceFilter(min_confidence=0.65, min_signature_overlap=1)
         self.confidence_filter.stats = {
             "total_inspected": 3500,
@@ -67,28 +53,34 @@ class SystemPipeline:
         self.window_buffer = []
         self.is_streaming = True
         self.stream_delay = 0.25 # seconds
-        print("[SUCCESS] Pipeline components initialized!")
+        print("[SUCCESS] Pipeline components initialized successfully!")
         
     def process_next_sample(self):
         record = next(self.stream_generator)
-        feature_vector = np.array(record["feature_vector"])
+        raw_feature_vector = np.array(record["feature_vector"])
+        
+        # Extract continuous features for the scope-restricted digital twin
+        cont_feature_vector = np.array([float(record["features"].get(f, 0.0)) for f in self.twin.feature_names])
         
         # Maintain sliding window for twin
         if len(self.window_buffer) < 5:
-            self.window_buffer.append(feature_vector)
-            predicted_state = feature_vector
+            self.window_buffer.append(cont_feature_vector)
+            predicted_cont = cont_feature_vector
         else:
             self.window_buffer.pop(0)
-            self.window_buffer.append(feature_vector)
+            self.window_buffer.append(cont_feature_vector)
             window_arr = np.array(self.window_buffer)
-            predicted_state = self.twin.predict_next_state(window_arr)
+            predicted_cont = self.twin.predict_next_state(window_arr)
             
         # Deviation calculation
-        deviation_vector = np.abs(feature_vector - predicted_state)
+        deviation_vector = np.abs(cont_feature_vector - predicted_cont)
         mean_deviation = float(np.mean(deviation_vector))
         
-        # IDS Classification
-        probs = self.ids_model.predict_proba(feature_vector.reshape(1, -1))[0]
+        # Construct Twin-Augmented-v2 feature vector (43 features)
+        fused_vector = np.hstack([raw_feature_vector, deviation_vector])
+        
+        # IDS Classification on Twin-Augmented feature space
+        probs = self.ids_model.predict_proba(fused_vector.reshape(1, -1))[0]
         pred_idx = int(np.argmax(probs))
         pred_class = self.label_encoder.inverse_transform([pred_idx])[0]
         confidence = float(probs[pred_idx])
@@ -100,15 +92,16 @@ class SystemPipeline:
         }
         
         # SHAP attribution
-        shap_exp = self.xai.explain_sample(feature_vector, top_k=5)
+        shap_exp = self.xai.explain_sample(fused_vector, top_k=5)
         
         # Operational Confidence Filter
         filter_result = self.confidence_filter.evaluate(pred_result, shap_exp)
         
         # Active continuous physical signal for live dual-trace visualizer (e.g., tcp.len)
-        active_metric = "tcp.len" if "tcp.len" in record["features"] else self.raw_features[0]
+        active_metric = "tcp.len" if "tcp.len" in record["features"] else self.twin.feature_names[0]
         actual_val = float(record["features"].get(active_metric, 0.0))
-        twin_val = float(predicted_state[self.raw_features.index(active_metric)]) if active_metric in self.raw_features else actual_val
+        pred_cont_dict = {k: float(v) for k, v in zip(self.twin.feature_names, predicted_cont)}
+        twin_val = float(pred_cont_dict.get(active_metric, actual_val))
         
         # Construct unified packet
         packet = {
@@ -118,7 +111,7 @@ class SystemPipeline:
             "actual_signal": actual_val,
             "twin_signal": twin_val,
             "features": record["features"],
-            "predicted_state": {k: float(v) for k, v in zip(self.raw_features, predicted_state)},
+            "predicted_state": pred_cont_dict,
             "mean_deviation": mean_deviation,
             "ground_truth": record["attack_type"],
             "prediction": pred_result,
@@ -147,11 +140,28 @@ class SystemPipeline:
 
 pipeline: Optional[SystemPipeline] = None
 
-@app.on_event("startup")
-def startup_event():
+@asynccontextmanager
+async def lifespan(app: FastAPI):
     global pipeline
     if pipeline is None:
         pipeline = SystemPipeline()
+    yield
+
+app = FastAPI(
+    title="Twin-Guided Explainable IDS Backend API",
+    description="Industrial IoT Intrusion Detection with Digital Twin Deviation & SHAP Explainability",
+    version="1.0.0",
+    lifespan=lifespan
+)
+
+# Enable CORS for React Frontend
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 @app.get("/api/health")
 def health_check():
@@ -236,4 +246,4 @@ async def sse_telemetry_stream(request: Request):
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="127.0.0.1", port=8000)
+    uvicorn.run("src.api_server:app", host="127.0.0.1", port=8000, reload=False)
