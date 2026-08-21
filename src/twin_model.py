@@ -1,7 +1,7 @@
 """
 Phase B / Milestone 3: Scope-Restricted Digital Twin Forecasting Model
 Learns normal industrial IoT telemetry dynamics using historical sequence windows
-exclusively on Continuous / Physical features (packet lengths, byte counts, checksums, jitter).
+exclusively on Continuous / Physical features with strict domain-appropriate physical bounding.
 """
 
 import os
@@ -28,6 +28,19 @@ CONTINUOUS_FEATURES = [
     'udp.stream',
     'udp.time_delta'
 ]
+
+# Physical plausible bounds for networking signals
+PHYSICAL_BOUNDS = {
+    'icmp.checksum': (0.0, 65535.0),
+    'icmp.seq_le': (0.0, 65535.0),
+    'http.content_length': (0.0, 10000000.0),
+    'tcp.ack': (0.0, 4294967295.0),
+    'tcp.checksum': (0.0, 65535.0),
+    'tcp.len': (0.0, 65535.0),
+    'tcp.seq': (0.0, 4294967295.0),
+    'udp.stream': (0.0, 1000000.0),
+    'udp.time_delta': (0.0, 3600.0)
+}
 
 class DigitalTwin:
     def __init__(self, window_size: int = 5, hidden_layer_sizes=(64, 32), max_iter=200, random_state=42):
@@ -95,19 +108,26 @@ class DigitalTwin:
         
     def predict_next_state(self, sequence_window: np.ndarray) -> np.ndarray:
         """
-        Given a raw continuous sequence window (W, K), predicts unscaled next state (K,).
+        Given a raw continuous sequence window (W, K), predicts unscaled, physically bounded next state (K,).
         """
         if not self.is_fitted:
             raise RuntimeError("Digital Twin model is not fitted yet.")
         scaled_window = self.scaler.transform(sequence_window)
         flat_input = scaled_window.flatten().reshape(1, -1)
         scaled_pred = self.model.predict(flat_input)
-        unscaled_pred = self.scaler.inverse_transform(scaled_pred)
-        return unscaled_pred[0]
+        unscaled_pred = self.scaler.inverse_transform(scaled_pred)[0]
+        
+        # Enforce physical network bounds
+        bounded_pred = np.zeros_like(unscaled_pred)
+        for idx, feat in enumerate(self.feature_names):
+            low, high = PHYSICAL_BOUNDS.get(feat, (0.0, 1e9))
+            bounded_pred[idx] = np.clip(unscaled_pred[idx], low, high)
+            
+        return bounded_pred
         
     def compute_dataset_predictions(self, df: pd.DataFrame) -> np.ndarray:
         """
-        Vectorized computation across full dataset for the continuous feature subset.
+        Vectorized computation across full dataset with physical bounding enforcement.
         """
         raw_values = df[self.feature_names].values
         scaled_values = self.scaler.transform(raw_values)
@@ -127,6 +147,12 @@ class DigitalTwin:
             predicted_scaled[self.window_size:] = preds
             
         unscaled_predictions = self.scaler.inverse_transform(predicted_scaled)
+        
+        # Apply physical bounds across full prediction matrix
+        for idx, feat in enumerate(self.feature_names):
+            low, high = PHYSICAL_BOUNDS.get(feat, (0.0, 1e9))
+            unscaled_predictions[:, idx] = np.clip(unscaled_predictions[:, idx], low, high)
+            
         return unscaled_predictions
         
     def save(self, model_dir: str = "models"):
@@ -158,54 +184,47 @@ class DigitalTwin:
 
 def train_and_evaluate_scope_restricted_twin(
     csv_path: str = "data/sampled_dataset.csv",
-    output_plot_path: str = "results/twin_validation.png"
+    model_dir: str = "models",
+    output_plot: str = "results/twin_forecast_validation.png"
 ):
-    print(f"Loading sampled dataset from {csv_path}...")
-    df = pd.read_csv(csv_path)
+    print("=" * 70)
+    print("  PHASE 1: TRAINING & VALIDATING PHYSICALLY BOUNDED DIGITAL TWIN")
+    print("=" * 70)
     
-    normal_df = df[df["Attack_type"] == "Normal"].copy().reset_index(drop=True)
-    print(f"Extracted {len(normal_df)} Normal telemetry samples for Digital Twin training.")
+    df = pd.read_csv(csv_path)
+    normal_df = df[df["Attack_type"] == "Normal"].reset_index(drop=True)
+    print(f"Normal Baseline Data: {len(normal_df)} rows")
     
     twin = DigitalTwin(window_size=5, hidden_layer_sizes=(64, 32), max_iter=200, random_state=42)
-    metrics = twin.fit(normal_df, CONTINUOUS_FEATURES)
-    twin.save("models")
+    metrics = twin.fit(normal_df)
+    twin.save(model_dir)
     
-    # Validation Plot on 2 Continuous Physical Signals (e.g. tcp.len and udp.stream)
-    print("Generating validation tracking plot for continuous physical signals...")
-    raw_values = normal_df[CONTINUOUS_FEATURES].values
-    preds = twin.compute_dataset_predictions(normal_df)
+    # Validation plotting
+    print("\nGenerating physically bounded forecast validation plot...")
+    test_slice = normal_df.iloc[:100]
+    preds = twin.compute_dataset_predictions(test_slice)
     
-    feat1, feat2 = "tcp.len", "udp.stream"
-    idx1 = CONTINUOUS_FEATURES.index(feat1)
-    idx2 = CONTINUOUS_FEATURES.index(feat2)
+    fig, axes = plt.subplots(3, 3, figsize=(16, 12))
+    axes = axes.flatten()
     
-    time_steps = range(100, 250)
-    
-    plt.figure(figsize=(14, 5))
-    
-    plt.subplot(1, 2, 1)
-    plt.plot(time_steps, raw_values[time_steps, idx1], label='Actual Sensor/Network Value', color='#2563eb', lw=2)
-    plt.plot(time_steps, preds[time_steps, idx1], label='Digital Twin Expected Forecast', color='#f59e0b', linestyle='--', lw=2)
-    plt.title(f'Twin Physical Forecast: {feat1}', fontweight='bold', fontsize=11)
-    plt.xlabel('Sample Index (Time Step)')
-    plt.ylabel('Feature Value (Bytes)')
-    plt.legend()
-    plt.grid(True, linestyle=':', alpha=0.6)
-    
-    plt.subplot(1, 2, 2)
-    plt.plot(time_steps, raw_values[time_steps, idx2], label='Actual Sensor/Network Value', color='#059669', lw=2)
-    plt.plot(time_steps, preds[time_steps, idx2], label='Digital Twin Expected Forecast', color='#dc2626', linestyle='--', lw=2)
-    plt.title(f'Twin Physical Forecast: {feat2}', fontweight='bold', fontsize=11)
-    plt.xlabel('Sample Index (Time Step)')
-    plt.ylabel('Feature Value (Flow Units)')
-    plt.legend()
-    plt.grid(True, linestyle=':', alpha=0.6)
-    
+    for i, col in enumerate(twin.feature_names):
+        ax = axes[i]
+        actual = test_slice[col].values
+        predicted = preds[:, i]
+        ax.plot(actual, label="Actual Telemetry", color="#38bdf8", lw=2)
+        ax.plot(predicted, label="Twin Forecast", color="#f59e0b", linestyle="--", lw=1.8)
+        ax.set_title(f"{col} (Bounds: {PHYSICAL_BOUNDS[col][0]} - {PHYSICAL_BOUNDS[col][1]})", fontsize=10, fontweight="bold")
+        ax.set_xlabel("Sample Index", fontsize=8)
+        ax.set_ylabel("Physical Value", fontsize=8)
+        ax.grid(True, linestyle=":", alpha=0.6)
+        if i == 0:
+            ax.legend(loc="upper right", fontsize=8)
+            
     plt.tight_layout()
-    os.makedirs(os.path.dirname(output_plot_path), exist_ok=True)
-    plt.savefig(output_plot_path, dpi=300)
+    os.makedirs(os.path.dirname(output_plot), exist_ok=True)
+    plt.savefig(output_plot, dpi=300)
     plt.close()
-    print(f"[SUCCESS] Saved scope-restricted validation plot to: {output_plot_path}")
+    print(f"[SUCCESS] Saved twin forecast validation plot to: {output_plot}")
     
     return twin, metrics
 
