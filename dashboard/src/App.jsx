@@ -463,14 +463,22 @@ export default function App() {
                     <LineChart data={telemetryHistory}>
                       <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
                       <XAxis dataKey="time" stroke="#64748b" tick={{ fontSize: 11 }} />
-                      <YAxis stroke="#64748b" tick={{ fontSize: 11 }} domain={['auto', 'auto']} />
+                      <YAxis 
+                        stroke="#64748b" 
+                        tick={{ fontSize: 11 }} 
+                        domain={[
+                          (dataMin) => Math.max(0, Math.floor(dataMin * 0.85)),
+                          (dataMax) => Math.max(100, Math.min(Math.ceil(dataMax * 1.15), 3500))
+                        ]} 
+                      />
                       <Tooltip 
                         contentStyle={{ background: '#0f172a', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px' }}
                         labelStyle={{ color: '#94a3b8' }}
+                        formatter={(value, name) => [`${value} Bytes`, name]}
                       />
                       <Legend />
-                      <Line type="monotone" dataKey="actual" name="Actual Sensor Value" stroke="#38bdf8" strokeWidth={2.5} dot={false} />
-                      <Line type="monotone" dataKey="predicted" name="Twin Forecast (Expected)" stroke="#f59e0b" strokeWidth={2} strokeDasharray="5 5" dot={false} />
+                      <Line type="monotone" dataKey="actual" name="Actual Sensor Value" stroke="#38bdf8" strokeWidth={2.5} dot={{ r: 2, fill: '#38bdf8' }} isAnimationActive={false} />
+                      <Line type="monotone" dataKey="predicted" name="Twin Forecast (Expected)" stroke="#f59e0b" strokeWidth={2} strokeDasharray="5 5" dot={false} isAnimationActive={false} />
                     </LineChart>
                   </ResponsiveContainer>
                 </div>
