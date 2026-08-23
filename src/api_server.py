@@ -206,6 +206,45 @@ def get_per_attack_breakdown():
     df = pd.read_csv(csv_path)
     return df.to_dict(orient="records")
 
+from fastapi.responses import StreamingResponse, FileResponse
+
+@app.get("/api/report/export-excel")
+def export_excel_report():
+    excel_path = "results/incident_and_prevention_audit_report.xlsx"
+    if not os.path.exists(excel_path):
+        from src.generate_incident_report import generate_comprehensive_audit_report
+        generate_comprehensive_audit_report(output_excel=excel_path)
+    return FileResponse(
+        excel_path,
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        filename="incident_and_prevention_audit_report.xlsx"
+    )
+
+@app.get("/api/report/export-csv")
+def export_csv_report():
+    csv_path = "results/incident_and_prevention_audit_report.csv"
+    if not os.path.exists(csv_path):
+        from src.generate_incident_report import generate_comprehensive_audit_report
+        generate_comprehensive_audit_report(output_csv=csv_path)
+    return FileResponse(
+        csv_path,
+        media_type="text/csv",
+        filename="incident_and_prevention_audit_report.csv"
+    )
+
+@app.get("/api/report/summary")
+def get_report_summary():
+    excel_path = "results/incident_and_prevention_audit_report.xlsx"
+    if not os.path.exists(excel_path):
+        from src.generate_incident_report import generate_comprehensive_audit_report
+        res = generate_comprehensive_audit_report()
+        return res
+    return {
+        "status": "READY",
+        "excel_url": "/api/report/export-excel",
+        "csv_url": "/api/report/export-csv"
+    }
+
 @app.get("/api/stream/step")
 def stream_single_step():
     global pipeline

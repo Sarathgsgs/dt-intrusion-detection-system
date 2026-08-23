@@ -3,7 +3,7 @@ import axios from 'axios';
 import { 
   ShieldAlert, Activity, Cpu, Layers, Play, Pause, FastForward, 
   CheckCircle, AlertTriangle, XCircle, BarChart3, Database, 
-  Terminal, Sliders, RefreshCw, Eye, Sparkles
+  Terminal, Sliders, RefreshCw, Eye, Sparkles, Download, FileSpreadsheet, FileText, Check
 } from 'lucide-react';
 import { 
   LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, 
@@ -36,6 +36,30 @@ export default function App() {
     suppressed_alerts: 0,
     normal_traffic: 0
   });
+
+  const [isGeneratingReport, setIsGeneratingReport] = useState(false);
+  const [reportSuccess, setReportSuccess] = useState(false);
+  const [reportFormat, setReportFormat] = useState('excel');
+
+  const handleDownloadReport = async (format = 'excel') => {
+    try {
+      setIsGeneratingReport(true);
+      setReportFormat(format);
+      const endpoint = format === 'excel' ? `${API_BASE}/api/report/export-excel` : `${API_BASE}/api/report/export-csv`;
+      const link = document.createElement('a');
+      link.href = endpoint;
+      link.setAttribute('download', `incident_and_prevention_audit_report.${format === 'excel' ? 'xlsx' : 'csv'}`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      setReportSuccess(true);
+      setTimeout(() => setReportSuccess(false), 4000);
+    } catch (err) {
+      console.error("Failed to download report:", err);
+    } finally {
+      setIsGeneratingReport(false);
+    }
+  };
 
   const eventSourceRef = useRef(null);
 
@@ -282,8 +306,70 @@ export default function App() {
           })}
         </div>
 
-        {/* Status Indicator */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+        {/* Top-Level Report Generator & Status Indicator */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
+          
+          {/* Main Top Action: Generate Audit Report */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '4px', background: 'rgba(15, 23, 42, 0.9)', padding: '3px', borderRadius: '10px', border: '1px solid rgba(56, 189, 248, 0.4)' }}>
+            <button
+              onClick={() => handleDownloadReport('excel')}
+              disabled={isGeneratingReport}
+              title="Download Full Multi-Tab Incident & Prevention Audit Workbook (Excel .xlsx)"
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                padding: '6px 14px',
+                borderRadius: '7px',
+                border: 'none',
+                cursor: isGeneratingReport ? 'wait' : 'pointer',
+                fontSize: '0.8rem',
+                fontWeight: 700,
+                background: reportSuccess && reportFormat === 'excel' 
+                  ? 'rgba(16, 185, 129, 0.25)' 
+                  : 'linear-gradient(135deg, #0284c7 0%, #0369a1 100%)',
+                color: '#ffffff',
+                boxShadow: '0 0 12px rgba(2, 132, 199, 0.35)',
+                transition: 'all 0.2s ease'
+              }}
+            >
+              {reportSuccess && reportFormat === 'excel' ? (
+                <>
+                  <Check size={15} color="#10b981" />
+                  <span style={{ color: '#6ee7b7' }}>Excel Downloaded!</span>
+                </>
+              ) : (
+                <>
+                  <FileSpreadsheet size={15} color="#38bdf8" />
+                  <span>📊 Generate Report (Excel)</span>
+                </>
+              )}
+            </button>
+
+            <button
+              onClick={() => handleDownloadReport('csv')}
+              disabled={isGeneratingReport}
+              title="Download Full Telemetry & Incident Audit CSV (.csv)"
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '4px',
+                padding: '6px 10px',
+                borderRadius: '7px',
+                border: 'none',
+                cursor: isGeneratingReport ? 'wait' : 'pointer',
+                fontSize: '0.75rem',
+                fontWeight: 700,
+                background: 'rgba(56, 189, 248, 0.12)',
+                color: '#38bdf8',
+                transition: 'all 0.2s ease'
+              }}
+            >
+              <Download size={13} />
+              <span>CSV</span>
+            </button>
+          </div>
+
           <div style={{
             display: 'flex',
             alignItems: 'center',
