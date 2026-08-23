@@ -209,8 +209,10 @@ def get_per_attack_breakdown():
 from fastapi.responses import StreamingResponse, FileResponse
 
 @app.get("/api/report/export-excel")
+@app.get("/api/report/export_excel")
+@app.get("/api/report/excel")
 def export_excel_report():
-    excel_path = "results/incident_and_prevention_audit_report.xlsx"
+    excel_path = os.path.abspath("results/incident_and_prevention_audit_report.xlsx")
     if not os.path.exists(excel_path):
         from src.generate_incident_report import generate_comprehensive_audit_report
         generate_comprehensive_audit_report(output_excel=excel_path)
@@ -221,8 +223,10 @@ def export_excel_report():
     )
 
 @app.get("/api/report/export-csv")
+@app.get("/api/report/export_csv")
+@app.get("/api/report/csv")
 def export_csv_report():
-    csv_path = "results/incident_and_prevention_audit_report.csv"
+    csv_path = os.path.abspath("results/incident_and_prevention_audit_report.csv")
     if not os.path.exists(csv_path):
         from src.generate_incident_report import generate_comprehensive_audit_report
         generate_comprehensive_audit_report(output_csv=csv_path)
@@ -234,7 +238,7 @@ def export_csv_report():
 
 @app.get("/api/report/summary")
 def get_report_summary():
-    excel_path = "results/incident_and_prevention_audit_report.xlsx"
+    excel_path = os.path.abspath("results/incident_and_prevention_audit_report.xlsx")
     if not os.path.exists(excel_path):
         from src.generate_incident_report import generate_comprehensive_audit_report
         res = generate_comprehensive_audit_report()

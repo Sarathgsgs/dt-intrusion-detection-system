@@ -39,23 +39,40 @@ export default function App() {
 
   const [isGeneratingReport, setIsGeneratingReport] = useState(false);
   const [reportSuccess, setReportSuccess] = useState(false);
-  const [reportFormat, setReportFormat] = useState('excel');
 
   const handleDownloadReport = async (format = 'excel') => {
     try {
       setIsGeneratingReport(true);
-      setReportFormat(format);
-      const endpoint = format === 'excel' ? `${API_BASE}/api/report/export-excel` : `${API_BASE}/api/report/export-csv`;
-      const link = document.createElement('a');
-      link.href = endpoint;
-      link.setAttribute('download', `incident_and_prevention_audit_report.${format === 'excel' ? 'xlsx' : 'csv'}`);
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
+      const ext = format === 'csv' ? 'csv' : 'xlsx';
+      const endpoint = `${API_BASE}/api/report/export-${format === 'csv' ? 'csv' : 'excel'}`;
+      
+      const response = await axios.get(endpoint, {
+        responseType: 'blob'
+      });
+      
+      const blob = new Blob([response.data], {
+        type: format === 'csv' 
+          ? 'text/csv;charset=utf-8;' 
+          : 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+      });
+      
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.style.display = 'none';
+      a.href = url;
+      a.download = `incident_and_prevention_audit_report.${ext}`;
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(() => {
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+      }, 100);
+      
       setReportSuccess(true);
-      setTimeout(() => setReportSuccess(false), 4000);
+      setTimeout(() => setReportSuccess(false), 3000);
     } catch (err) {
-      console.error("Failed to download report:", err);
+      console.warn("Direct blob download failed, trying window fallback:", err);
+      window.location.href = `${API_BASE}/api/report/export-${format === 'csv' ? 'csv' : 'excel'}`;
     } finally {
       setIsGeneratingReport(false);
     }
@@ -306,69 +323,42 @@ export default function App() {
           })}
         </div>
 
-        {/* Top-Level Report Generator & Status Indicator */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
+        {/* Top-Level Report Download Icon & Status Indicator */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
           
-          {/* Main Top Action: Generate Audit Report */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '4px', background: 'rgba(15, 23, 42, 0.9)', padding: '3px', borderRadius: '10px', border: '1px solid rgba(56, 189, 248, 0.4)' }}>
-            <button
-              onClick={() => handleDownloadReport('excel')}
-              disabled={isGeneratingReport}
-              title="Download Full Multi-Tab Incident & Prevention Audit Workbook (Excel .xlsx)"
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '6px',
-                padding: '6px 14px',
-                borderRadius: '7px',
-                border: 'none',
-                cursor: isGeneratingReport ? 'wait' : 'pointer',
-                fontSize: '0.8rem',
-                fontWeight: 700,
-                background: reportSuccess && reportFormat === 'excel' 
-                  ? 'rgba(16, 185, 129, 0.25)' 
-                  : 'linear-gradient(135deg, #0284c7 0%, #0369a1 100%)',
-                color: '#ffffff',
-                boxShadow: '0 0 12px rgba(2, 132, 199, 0.35)',
-                transition: 'all 0.2s ease'
-              }}
-            >
-              {reportSuccess && reportFormat === 'excel' ? (
-                <>
-                  <Check size={15} color="#10b981" />
-                  <span style={{ color: '#6ee7b7' }}>Excel Downloaded!</span>
-                </>
-              ) : (
-                <>
-                  <FileSpreadsheet size={15} color="#38bdf8" />
-                  <span>📊 Generate Report (Excel)</span>
-                </>
-              )}
-            </button>
-
-            <button
-              onClick={() => handleDownloadReport('csv')}
-              disabled={isGeneratingReport}
-              title="Download Full Telemetry & Incident Audit CSV (.csv)"
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '4px',
-                padding: '6px 10px',
-                borderRadius: '7px',
-                border: 'none',
-                cursor: isGeneratingReport ? 'wait' : 'pointer',
-                fontSize: '0.75rem',
-                fontWeight: 700,
-                background: 'rgba(56, 189, 248, 0.12)',
-                color: '#38bdf8',
-                transition: 'all 0.2s ease'
-              }}
-            >
-              <Download size={13} />
-              <span>CSV</span>
-            </button>
-          </div>
+          {/* Top Download Button (Icon Only - No Text / No Emojis) */}
+          <button
+            onClick={() => handleDownloadReport('excel')}
+            disabled={isGeneratingReport}
+            title="Download Incident & Prevention Audit Report (Excel .xlsx)"
+            aria-label="Download Incident & Prevention Audit Report"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              width: '38px',
+              height: '38px',
+              borderRadius: '10px',
+              border: `1px solid ${reportSuccess ? 'rgba(16, 185, 129, 0.4)' : 'rgba(56, 189, 248, 0.4)'}`,
+              cursor: isGeneratingReport ? 'wait' : 'pointer',
+              background: reportSuccess 
+                ? 'rgba(16, 185, 129, 0.18)' 
+                : 'rgba(15, 23, 42, 0.85)',
+              color: reportSuccess ? '#10b981' : '#38bdf8',
+              boxShadow: reportSuccess 
+                ? '0 0 15px rgba(16, 185, 129, 0.3)' 
+                : '0 0 12px rgba(56, 189, 248, 0.2)',
+              transition: 'all 0.2s ease'
+            }}
+          >
+            {reportSuccess ? (
+              <Check size={18} color="#10b981" />
+            ) : isGeneratingReport ? (
+              <RefreshCw size={18} color="#38bdf8" style={{ animation: 'spin 1s linear infinite' }} />
+            ) : (
+              <Download size={18} color="#38bdf8" />
+            )}
+          </button>
 
           <div style={{
             display: 'flex',
