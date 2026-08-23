@@ -45,10 +45,10 @@ An end-to-end, resource-aware cyber-physical intrusion detection system combinin
 
 | Configuration | Feature Space | Accuracy (%) | Macro-F1 | Mean Latency +- Std (ms) | Throughput (samples/s) | Storage (KB) |
 |---|---|---|---|---|---|---|
-| **Config 1: Full Twin + Heavy RF (150 trees)** | Twin-Augmented-v2 | **93.85%** | **0.9056** | **0.449 +- 0.001 ms** | 2,225.4 | 17,390.3 KB |
-| **Config 2: Quantized Twin + Standard RF (100 trees)** | Twin-Augmented-v2 | **92.92%** | **0.8957** | **0.177 +- 0.007 ms** | 5,647.0 | 6,636.6 KB |
-| **Config 3: Quantized Twin + Pruned RF (30 trees)** | Twin-Augmented-v2 | 88.86% | 0.8444 | **0.153 +- 0.001 ms** | 6,540.2 | 578.9 KB |
-| **Config 4: Fast-Inference Edge XGBoost (25 trees)** | Raw Telemetry | 91.81% | 0.8871 | **0.005 +- 0.001 ms** | **218,134.9** | **105.9 KB** |
+| **Config 1: Full Twin + Heavy RF (150 trees)** | Twin-Augmented-v2 | **94.08%** | **0.9066** | **0.457 +- 0.011 ms** | 2,187.8 | 14,576.8 KB |
+| **Config 2: Quantized Twin + Standard RF (100 trees)** | Twin-Augmented-v2 | **93.44%** | **0.9006** | **0.209 +- 0.016 ms** | 4,787.2 | 5,633.9 KB |
+| **Config 3: Quantized Twin + Pruned RF (30 trees)** | Twin-Augmented-v2 | 88.92% | 0.8461 | **0.165 +- 0.011 ms** | 6,066.0 | 448.3 KB |
+| **Config 4: Fast-Inference Edge XGBoost (25 trees)** | Raw Telemetry | 91.81% | 0.8871 | **0.006 +- 0.003 ms** | **154,718.3** | **105.9 KB** |
 
 *Note: The Operational Confidence Filter reliably suppresses **30.0%** (empirical range: 28.6%–31.4%) of ambiguous, low-confidence false positives.*
 

@@ -1,16 +1,16 @@
 Attack Class,Raw Class Name,Category,Support,RF-Raw F1,XGB-Raw F1,RF-Twin-v2 F1,XGB-Twin-v2 F1,RF F1 Delta,XGB F1 Delta,Low Support Flag,Outcome
-XSS,XSS,Application & Payload-Centric,892,0.9058,0.9084,0.8839,0.9085,-0.0219,0.0001,No,Statistical Parity
+XSS,XSS,Application & Payload-Centric,892,0.9058,0.9084,0.8942,0.9094,-0.0116,0.001,No,Statistical Parity
+Uploading,Uploading,Application & Payload-Centric,911,0.9167,0.9221,0.911,0.9224,-0.0057,0.0003,No,Statistical Parity
+DDoS_ICMP,DDoS_ICMP,Volumetric / Network Flood,1250,0.9996,0.9996,0.9996,0.9996,0.0,0.0,No,Exact Parity
 DDoS_TCP,DDoS_TCP,Volumetric / Network Flood,909,1.0,1.0,1.0,1.0,0.0,0.0,No,Exact Parity
 DDoS_UDP,DDoS_UDP,Volumetric / Network Flood,1286,1.0,1.0,1.0,1.0,0.0,0.0,No,Exact Parity
-DDoS_ICMP,DDoS_ICMP,Volumetric / Network Flood,1250,0.9996,0.9996,0.9992,0.9996,-0.0004,0.0,No,Statistical Parity
-Backdoor,Backdoor,Application & Payload-Centric,904,0.9837,0.9848,0.9758,0.9848,-0.0079,0.0,No,Statistical Parity
-Normal,Normal,Normal Baseline,2156,0.9979,0.9979,0.9977,0.9977,-0.0002,-0.0002,No,Statistical Parity
-MITM *,MITM,Stealth Behavioral / Recon,108,0.5806,0.5806,0.5887,0.5792,0.0081,-0.0015,Yes (n < 200),Statistical Parity
-Uploading,Uploading,Application & Payload-Centric,911,0.9167,0.9221,0.9002,0.9205,-0.0164,-0.0016,No,Statistical Parity
-Vulnerability_scanner,Vulnerability_scanner,Application & Payload-Centric,894,0.9773,0.9759,0.9737,0.973,-0.0036,-0.0028,No,Statistical Parity
-Password,Password,Application & Payload-Centric,886,0.8915,0.899,0.8675,0.8953,-0.024,-0.0037,No,Statistical Parity
-SQL_injection,SQL_injection,Application & Payload-Centric,915,0.8873,0.8963,0.8601,0.8901,-0.0272,-0.0062,No,Statistical Parity
-DDoS_HTTP,DDoS_HTTP,Volumetric / Network Flood,937,0.8472,0.8571,0.8274,0.8507,-0.0198,-0.0065,No,Statistical Parity
-Port_Scanning,Port_Scanning,Volumetric / Network Flood,893,0.9511,0.9511,0.9374,0.9444,-0.0138,-0.0068,No,Statistical Parity
-Fingerprinting *,Fingerprinting,Stealth Behavioral / Recon,89,0.8889,0.8889,0.8625,0.875,-0.0264,-0.0139,Yes (n < 200),Raw Baseline Preferred
-Ransomware,Ransomware,Application & Payload-Centric,969,0.9379,0.9385,0.919,0.9176,-0.0189,-0.0209,No,Raw Baseline Preferred
+Normal,Normal,Normal Baseline,2156,0.9979,0.9979,0.9974,0.9977,-0.0005,-0.0002,No,Statistical Parity
+Backdoor,Backdoor,Application & Payload-Centric,904,0.9837,0.9848,0.977,0.9843,-0.0067,-0.0006,No,Statistical Parity
+Port_Scanning,Port_Scanning,Volumetric / Network Flood,893,0.9511,0.9511,0.9481,0.9501,-0.0031,-0.0011,No,Statistical Parity
+SQL_injection,SQL_injection,Application & Payload-Centric,915,0.8873,0.8963,0.8745,0.894,-0.0128,-0.0023,No,Statistical Parity
+Vulnerability_scanner,Vulnerability_scanner,Application & Payload-Centric,894,0.9773,0.9759,0.9742,0.972,-0.003,-0.0039,No,Statistical Parity
+Password,Password,Application & Payload-Centric,886,0.8915,0.899,0.8679,0.8947,-0.0236,-0.0043,No,Statistical Parity
+DDoS_HTTP,DDoS_HTTP,Volumetric / Network Flood,937,0.8472,0.8571,0.8306,0.8525,-0.0165,-0.0047,No,Statistical Parity
+Fingerprinting *,Fingerprinting,Stealth Behavioral / Recon,89,0.8889,0.8889,0.882,0.882,-0.0069,-0.0069,Yes (n < 200),Statistical Parity
+Ransomware,Ransomware,Application & Payload-Centric,969,0.9379,0.9385,0.9224,0.9202,-0.0155,-0.0183,No,Raw Baseline Preferred
+MITM *,MITM,Stealth Behavioral / Recon,108,0.5806,0.5806,0.56,0.5299,-0.0206,-0.0508,Yes (n < 200),Raw Baseline Preferred

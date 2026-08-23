@@ -1,11 +1,9 @@
 """
-Phase B / Milestone 3: Scope-Restricted Digital Twin Forecasting Model
-Learns normal industrial IoT telemetry dynamics using historical sequence windows
-exclusively on Continuous / Physical features with strict domain-appropriate physical bounding.
+Scope-Restricted Physically Bounded Digital Twin with Log1p Normalization & Robust Regularization
+Models baseline normal telemetry exclusively across continuous physical features.
 """
 
 import os
-import sys
 import joblib
 import numpy as np
 import pandas as pd
@@ -14,53 +12,70 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.neural_network import MLPRegressor
 from sklearn.metrics import mean_squared_error, mean_absolute_error
 
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
-
-# 9 Continuous / Physical features identified in Phase A audit
+# Continuous physical features suitable for sequence regression
 CONTINUOUS_FEATURES = [
-    'icmp.checksum',
-    'icmp.seq_le',
-    'http.content_length',
-    'tcp.ack',
-    'tcp.checksum',
-    'tcp.len',
-    'tcp.seq',
-    'udp.stream',
-    'udp.time_delta'
+    "icmp.checksum",
+    "icmp.seq_le",
+    "http.content_length",
+    "tcp.ack",
+    "tcp.checksum",
+    "tcp.len",
+    "tcp.seq",
+    "udp.stream",
+    "udp.time_delta"
 ]
 
-# Physical plausible bounds for networking signals
+# Physical protocol boundaries for industrial cyber-physical networks
 PHYSICAL_BOUNDS = {
-    'icmp.checksum': (0.0, 65535.0),
-    'icmp.seq_le': (0.0, 65535.0),
-    'http.content_length': (0.0, 10000000.0),
-    'tcp.ack': (0.0, 4294967295.0),
-    'tcp.checksum': (0.0, 65535.0),
-    'tcp.len': (0.0, 65535.0),
-    'tcp.seq': (0.0, 4294967295.0),
-    'udp.stream': (0.0, 1000000.0),
-    'udp.time_delta': (0.0, 3600.0)
+    "icmp.checksum": (0.0, 65535.0),
+    "icmp.seq_le": (0.0, 65535.0),
+    "http.content_length": (0.0, 10000000.0),
+    "tcp.ack": (0.0, 4294967295.0),
+    "tcp.checksum": (0.0, 65535.0),
+    "tcp.len": (0.0, 65535.0),
+    "tcp.seq": (0.0, 4294967295.0),
+    "udp.stream": (0.0, 1000000.0),
+    "udp.time_delta": (0.0, 3600.0)
 }
 
 class DigitalTwin:
-    def __init__(self, window_size: int = 5, hidden_layer_sizes=(64, 32), max_iter=200, random_state=42):
+    def __init__(
+        self,
+        window_size: int = 5,
+        hidden_layer_sizes: tuple = (64, 32),
+        alpha: float = 0.05,
+        max_iter: int = 250,
+        random_state: int = 42,
+        use_log1p: bool = True
+    ):
         self.window_size = window_size
         self.hidden_layer_sizes = hidden_layer_sizes
+        self.alpha = alpha
         self.max_iter = max_iter
         self.random_state = random_state
+        self.use_log1p = use_log1p
         self.scaler = StandardScaler()
         self.model = MLPRegressor(
             hidden_layer_sizes=self.hidden_layer_sizes,
-            activation='relu',
-            solver='adam',
+            alpha=self.alpha,
             max_iter=self.max_iter,
             early_stopping=True,
-            validation_fraction=0.15,
-            n_iter_no_change=10,
             random_state=self.random_state
         )
         self.feature_names = CONTINUOUS_FEATURES.copy()
         self.is_fitted = False
+        
+    def _transform_in(self, arr: np.ndarray) -> np.ndarray:
+        if self.use_log1p:
+            return np.log1p(np.maximum(0, arr))
+        return arr
+        
+    def _transform_out(self, arr: np.ndarray) -> np.ndarray:
+        if self.use_log1p:
+            # Bound log-space predictions to physical max (log1p(4.3e9) ~= 22.2)
+            clipped_log = np.clip(arr, 0.0, 22.5)
+            return np.expm1(clipped_log)
+        return arr
         
     def _create_sequences(self, data: np.ndarray):
         X, y = [], []
@@ -81,7 +96,8 @@ class DigitalTwin:
         print(f"  {self.feature_names}")
         
         raw_values = normal_df[self.feature_names].values
-        scaled_values = self.scaler.fit_transform(raw_values)
+        transformed_values = self._transform_in(raw_values)
+        scaled_values = self.scaler.fit_transform(transformed_values)
         
         X, y = self._create_sequences(scaled_values)
         print(f"Twin Training Data: {X.shape[0]} sequences (Window={self.window_size}, Inputs={X.shape[1]}, Outputs={y.shape[1]})")
@@ -90,14 +106,18 @@ class DigitalTwin:
         X_train, y_train = X[:split_idx], y[:split_idx]
         X_val, y_val = X[split_idx:], y[split_idx:]
         
-        print("Training Scope-Restricted Digital Twin Neural Forecaster...")
+        print("Training Scope-Restricted Log1p Robust Digital Twin...")
         self.model.fit(X_train, y_train)
         self.is_fitted = True
         
-        val_preds = self.model.predict(X_val)
-        val_mse = mean_squared_error(y_val, val_preds)
-        val_mae = mean_absolute_error(y_val, val_preds)
-        print(f"Scope-Restricted Twin Validation MSE (scaled): {val_mse:.6f} | MAE: {val_mae:.6f}")
+        val_preds_scaled = self.model.predict(X_val)
+        val_preds_unscaled = self.scaler.inverse_transform(val_preds_scaled)
+        val_preds_physical = self._transform_out(val_preds_unscaled)
+        
+        val_actual_physical = raw_values[split_idx + self.window_size:]
+        val_mse = mean_squared_error(val_actual_physical, val_preds_physical)
+        val_mae = mean_absolute_error(val_actual_physical, val_preds_physical)
+        print(f"Scope-Restricted Twin Validation MSE: {val_mse:.4f} | MAE: {val_mae:.4f}")
         
         return {
             "val_mse": float(val_mse),
@@ -112,16 +132,18 @@ class DigitalTwin:
         """
         if not self.is_fitted:
             raise RuntimeError("Digital Twin model is not fitted yet.")
-        scaled_window = self.scaler.transform(sequence_window)
+        transformed_window = self._transform_in(sequence_window)
+        scaled_window = self.scaler.transform(transformed_window)
         flat_input = scaled_window.flatten().reshape(1, -1)
         scaled_pred = self.model.predict(flat_input)
         unscaled_pred = self.scaler.inverse_transform(scaled_pred)[0]
+        physical_pred = self._transform_out(unscaled_pred)
         
         # Enforce physical network bounds
-        bounded_pred = np.zeros_like(unscaled_pred)
+        bounded_pred = np.zeros_like(physical_pred)
         for idx, feat in enumerate(self.feature_names):
             low, high = PHYSICAL_BOUNDS.get(feat, (0.0, 1e9))
-            bounded_pred[idx] = np.clip(unscaled_pred[idx], low, high)
+            bounded_pred[idx] = np.clip(physical_pred[idx], low, high)
             
         return bounded_pred
         
@@ -130,7 +152,8 @@ class DigitalTwin:
         Vectorized computation across full dataset with physical bounding enforcement.
         """
         raw_values = df[self.feature_names].values
-        scaled_values = self.scaler.transform(raw_values)
+        transformed_values = self._transform_in(raw_values)
+        scaled_values = self.scaler.transform(transformed_values)
         n_samples, n_features = raw_values.shape
         
         predicted_scaled = np.zeros_like(scaled_values)
@@ -147,13 +170,14 @@ class DigitalTwin:
             predicted_scaled[self.window_size:] = preds
             
         unscaled_predictions = self.scaler.inverse_transform(predicted_scaled)
+        physical_predictions = self._transform_out(unscaled_predictions)
         
         # Apply physical bounds across full prediction matrix
         for idx, feat in enumerate(self.feature_names):
             low, high = PHYSICAL_BOUNDS.get(feat, (0.0, 1e9))
-            unscaled_predictions[:, idx] = np.clip(unscaled_predictions[:, idx], low, high)
+            physical_predictions[:, idx] = np.clip(physical_predictions[:, idx], low, high)
             
-        return unscaled_predictions
+        return physical_predictions
         
     def save(self, model_dir: str = "models"):
         os.makedirs(model_dir, exist_ok=True)
@@ -164,6 +188,8 @@ class DigitalTwin:
             "window_size": self.window_size,
             "feature_names": self.feature_names,
             "hidden_layer_sizes": self.hidden_layer_sizes,
+            "alpha": self.alpha,
+            "use_log1p": self.use_log1p,
             "is_fitted": self.is_fitted
         }
         joblib.dump(metadata, os.path.join(model_dir, "twin_metadata.pkl"))
@@ -173,8 +199,10 @@ class DigitalTwin:
     def load(cls, model_dir: str = "models"):
         metadata = joblib.load(os.path.join(model_dir, "twin_metadata.pkl"))
         instance = cls(
-            window_size=metadata["window_size"],
-            hidden_layer_sizes=metadata["hidden_layer_sizes"]
+            window_size=metadata.get("window_size", 5),
+            hidden_layer_sizes=metadata.get("hidden_layer_sizes", (64, 32)),
+            alpha=metadata.get("alpha", 0.05),
+            use_log1p=metadata.get("use_log1p", True)
         )
         instance.model = joblib.load(os.path.join(model_dir, "twin_model.pkl"))
         instance.scaler = joblib.load(os.path.join(model_dir, "twin_scaler.pkl"))
@@ -188,14 +216,14 @@ def train_and_evaluate_scope_restricted_twin(
     output_plot: str = "results/twin_forecast_validation.png"
 ):
     print("=" * 70)
-    print("  PHASE 1: TRAINING & VALIDATING PHYSICALLY BOUNDED DIGITAL TWIN")
+    print("  PHASE 1: TRAINING & VALIDATING LOG1P PHYSICALLY BOUNDED DIGITAL TWIN")
     print("=" * 70)
     
     df = pd.read_csv(csv_path)
     normal_df = df[df["Attack_type"] == "Normal"].reset_index(drop=True)
     print(f"Normal Baseline Data: {len(normal_df)} rows")
     
-    twin = DigitalTwin(window_size=5, hidden_layer_sizes=(64, 32), max_iter=200, random_state=42)
+    twin = DigitalTwin(window_size=5, hidden_layer_sizes=(64, 32), alpha=0.05, max_iter=250, random_state=42, use_log1p=True)
     metrics = twin.fit(normal_df)
     twin.save(model_dir)
     
@@ -212,7 +240,7 @@ def train_and_evaluate_scope_restricted_twin(
         actual = test_slice[col].values
         predicted = preds[:, i]
         ax.plot(actual, label="Actual Telemetry", color="#38bdf8", lw=2)
-        ax.plot(predicted, label="Twin Forecast", color="#f59e0b", linestyle="--", lw=1.8)
+        ax.plot(predicted, label="Log1p Twin Forecast", color="#f59e0b", linestyle="--", lw=1.8)
         ax.set_title(f"{col} (Bounds: {PHYSICAL_BOUNDS[col][0]} - {PHYSICAL_BOUNDS[col][1]})", fontsize=10, fontweight="bold")
         ax.set_xlabel("Sample Index", fontsize=8)
         ax.set_ylabel("Physical Value", fontsize=8)
