@@ -75,3 +75,36 @@ In the Edge-IIoTset benchmark dataset:
    - On **`Uploading`**, **`dev_tcp.len`** and **`tcp.len`** are dominant risk drivers because massive file upload payload sequences trigger large continuous deviation residuals against normal telemetry.
 2. **Defensible Examiner Statement:**
    > *"While deep payload inspection (DPI) requires heavy string parsing tokenizers unsuited for sub-millisecond edge gateways, X-IDS effectively captures application-layer attacks (SQLi, XSS, Uploading) through continuous packet length deviation residuals (`dev_tcp.len`, `http.content_length`), achieving >0.909–0.922 F1 without incurring heavy string-parsing overhead."*
+
+
+---
+
+## 4. Live Pipeline SHAP Confirmation (Task 2 — Track B Gate Check)
+
+**SQL_injection Top-5 SHAP Features:**
+
+| Feature | Mean |SHAP| | Domain Match |
+|---|---:|---|
+| tcp.connection.fin | 0.172524 | Other |
+| icmp.seq_le | 0.127476 | Other |
+| tcp.ack | 0.125028 | Other |
+| tcp.connection.rst | 0.120647 | Other |
+| arp.opcode | 0.114627 | Other |
+
+**Domain overlap (SQLi):** `set()` — 0/5 expected features in top-5
+
+**DDoS_ICMP Control Top-5 SHAP Features:**
+
+| Feature | Mean |SHAP| | Domain Match |
+|---|---:|---|
+| icmp.checksum | 0.191673 | ✓ Expected |
+| arp.hw.size | 0.128409 | Other |
+| http.response | 0.108402 | Other |
+| icmp.seq_le | 0.107342 | ✓ Expected |
+| tcp.connection.fin | 0.104229 | Other |
+
+**Overall Track B Verdict:** `PARTIAL`
+
+⚠️ Partial or failing SHAP domain alignment. See audit panel for details.
+
+![SHAP Audit Panel](sqli_shap_audit_panel.png)

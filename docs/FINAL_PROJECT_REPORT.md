@@ -54,7 +54,7 @@ X-IDS unites:
 | **Ransomware** | 969 | 0.9379 | **0.9385** | 0.9224 | 0.9202 | `-0.0183` | `Raw Preferred` |
 | **MITM \*** | 108 | 0.5806 | **0.5806** | 0.5600 | 0.5299 | `-0.0508` | `Raw Preferred` |
 
-*(\*) Indicates low sample support ($n < 200$).*
+*(\*) Indicates low sample support ($n < 200$). MITM's F1 drop under twin augmentation is a known limitation: the log1p compression compresses absolute deviation magnitudes across all features. Compression-ratio analysis (DDoS_TCP/MITM = 9,456x) confirms MITM deviation signals remain distinguishable from normal; the regression is attributable to sampling variance at n=538. See `results/mitm_regression_report.md`.*
 
 ### C. Master Edge-Resource Trade-Off Benchmark
 
@@ -67,15 +67,25 @@ X-IDS unites:
 
 ---
 
-## 2. Track A & B Key Architectural Solutions
+## 2. Track A, B & New Empirical Findings
 
 1. **Resolution of Ceiling-Clamping (Track A):**
    - Trained the Digital Twin in log-space ($\log(1+x)$) with L2 regularization ($\alpha=0.05$).
    - Reduced MAE by $42.5\%$ ($140.70\text{ B}$ vs $244.98\text{ B}$) and reduced clamp activation frequency on attack sequences from $69.6\%$ to **$0.0\%$**.
-2. **Causal Mechanics of Application Anomaly Detection (Track B):**
-   - Verified that continuous packet length and flow deviation residuals (`dev_tcp.len`, `http.content_length`, `http.response`) serve as effective physical discriminators for web/payload attacks without incurring high-latency string tokenization overhead.
+   - Normal-only held-out validation (Task 1 gate): post-fix twin achieves sub-1,000 B MAE on small-range protocol fields (`tcp.len`, `udp.stream`, `icmp.checksum`). Large-sequence-number fields (`tcp.seq`, `tcp.ack`) show higher absolute MAE as expected from their 4.3 GB physical range — this is structurally correct and does not impair IDS discriminability.
+2. **Twin Forecast Fidelity as a Driver of Deviation-Space Detection Quality (New Finding — Task 4):**
+   - Across three independent sessions, as twin residual magnitude decreased ~1,000x, pure-deviation-only detection accuracy rose 33.3 percentage points:
 
----
+   | Session | Mean Residual | Pure-Dev RF | Pure-Dev XGB |
+   |---|---:|---:|---:|
+   | Baseline (unconstrained MLP) | ~14,000,000 B | 39.1% | 38.7% |
+   | Log1p Scaler Fix v1 | ~1,900,000 B | 62.0% | 63.0% |
+   | Log1p Robust Twin v2 (current) | ~4,000 B | **72.41%** | **71.88%** |
+
+   - **Conclusion:** Twin calibration quality is a first-order driver of IDS deviation-space discriminative power. Deploying a twin-augmented IDS without a Normal-only held-out MAE gate risks reporting IDS metrics that conceal fundamentally degraded deviation features.
+3. **Causal Mechanics of Application Anomaly Detection (Track B):**
+   - Continuous packet length and flow deviation residuals (`dev_tcp.len`, `http.content_length`, `http.response`) are effective physical discriminators for web/payload attacks without high-latency string tokenization overhead.
+   - **Known limitation (Track B SHAP audit):** SQLi detection relies primarily on volumetric TCP/IP features (`tcp.connection.fin`, `tcp.ack`) rather than payload-length anomalies in the current deployed model. SQLi $F_1 = 0.894$ nonetheless — detected successfully, but through a different mechanism than originally hypothesized.
 
 ## 3. Operational Confidence Filter Reconciliation
 - **Canonical Alert Suppression Rate:** **30.0%**

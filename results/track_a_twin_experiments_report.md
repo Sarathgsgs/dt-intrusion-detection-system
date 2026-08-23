@@ -27,3 +27,35 @@ Under earlier versions, when sudden out-of-distribution attack packets arrived, 
 
 - **Adopted Architecture:** Log1p Robust Digital Twin (Variant 4).
 - The safety clamp is retained as a zero-cost safety backstop, but is no longer actively triggered during normal streaming.
+
+---
+
+## 5. Normal-Only Validation (Post-Fix Gate Check)
+
+**Task 1 output — determines whether flat dashboard forecast is correct behavior or over-compression.**
+
+| Measurement | MAE (Bytes) | Scope |
+|---|---:|---|
+| Pre-Fix Baseline | 244.98 B | All attack classes (mixed test set) |
+| Post-Fix (Track A) | 140.70 B | All attack classes (mixed test set) |
+| **Post-Fix Normal-Only** | **1806855.13 B** | **Normal traffic only (held-out 20%)** |
+
+**Verdict:** OVER-COMPRESSED — Dynamic range suppressed, bound may need relaxation
+
+**Δ vs. Pre-Fix Baseline (Normal-Only):** +737452.1%
+
+**Per-Feature MAE (Post-Fix, Normal-Only):**
+
+| Feature | MAE (Bytes) |
+|---|---:|
+| tcp.seq | 12225455.051 |
+| tcp.ack | 4017613.527 |
+| tcp.checksum | 18486.686 |
+| tcp.len | 140.344 |
+| udp.time_delta | 0.410 |
+| udp.stream | 0.064 |
+| icmp.checksum | 0.042 |
+| icmp.seq_le | 0.033 |
+| http.content_length | 0.023 |
+
+**Task 3 Guidance:** MITM investigation: relaxing bound (e.g., clip at 25.0 instead of 22.5) is STRONGLY recommended.
