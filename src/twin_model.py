@@ -38,6 +38,19 @@ PHYSICAL_BOUNDS = {
     "udp.time_delta": (0.0, 3600.0)
 }
 
+# Per-feature maximum log-space bounds corresponding strictly to valid sub-saturation physical ceilings:
+FEATURE_LOG_CLIPS = {
+    "tcp.seq": 22.18,
+    "tcp.ack": 22.18,
+    "tcp.len": 11.08,
+    "icmp.checksum": 11.08,
+    "icmp.seq_le": 11.08,
+    "tcp.checksum": 11.08,
+    "http.content_length": 16.11,
+    "udp.stream": 13.81,
+    "udp.time_delta": 8.18
+}
+
 class DigitalTwin:
     def __init__(
         self,
@@ -72,9 +85,14 @@ class DigitalTwin:
         
     def _transform_out(self, arr: np.ndarray) -> np.ndarray:
         if self.use_log1p:
-            # Bound log-space predictions to physical max (log1p(4.3e9) ~= 22.2)
-            clipped_log = np.clip(arr, 0.0, 22.5)
-            return np.expm1(clipped_log)
+            is_1d = (arr.ndim == 1)
+            arr_2d = arr.reshape(1, -1) if is_1d else arr
+            clipped_log = np.zeros_like(arr_2d)
+            for j, feat in enumerate(self.feature_names):
+                ceil_val = FEATURE_LOG_CLIPS.get(feat, 25.0)
+                clipped_log[:, j] = np.clip(arr_2d[:, j], 0.0, ceil_val)
+            res = np.expm1(clipped_log)
+            return res.ravel() if is_1d else res
         return arr
         
     def _create_sequences(self, data: np.ndarray):
