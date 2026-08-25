@@ -60,10 +60,10 @@ X-IDS unites:
 
 | Configuration | Feature Space | Accuracy (%) | Macro-F1 | Mean Latency $\pm$ Std (ms) | Throughput (samples/s) | Storage (KB) |
 |---|---|---|---|---|---|---|
-| **Config 1: Full Twin + Heavy RF (150 trees)** | Twin-Augmented-v2 | **94.08%** | **0.9066** | **$0.457 \pm 0.011\text{ ms}$** | 2,187.8 | 14,576.8 KB |
-| **Config 2: Quantized Twin + Standard RF (100 trees)** | Twin-Augmented-v2 | **93.44%** | **0.9006** | **$0.209 \pm 0.016\text{ ms}$** | 4,787.2 | 5,633.9 KB |
-| **Config 3: Quantized Twin + Pruned RF (30 trees)** | Twin-Augmented-v2 | 88.92% | 0.8461 | **$0.165 \pm 0.011\text{ ms}$** | 6,066.0 | 448.3 KB |
-| **Config 4: Fast-Inference Edge XGBoost (25 trees)** | Raw Telemetry | 91.81% | 0.8871 | **$0.006 \pm 0.003\text{ ms}$** | **154,718.3** | **105.9 KB** |
+| **Config 1: Full Twin + Heavy RF (150 trees)** | Twin-Augmented-v2 | **94.13%** | **0.9068** | **$0.446 \pm 0.003\text{ ms}$** | 2,240.1 | 14,546.1 KB |
+| **Config 2: Quantized Twin + Standard RF (100 trees)** | Twin-Augmented-v2 | **93.23%** | **0.8973** | **$0.220 \pm 0.019\text{ ms}$** | 4,548.2 | 5,610.0 KB |
+| **Config 3: Quantized Twin + Pruned RF (30 trees)** | Twin-Augmented-v2 | 88.88% | 0.8459 | **$0.155 \pm 0.002\text{ ms}$** | 6,462.3 | 457.8 KB |
+| **Config 4: Fast-Inference Edge XGBoost (25 trees)** | Raw Telemetry | 91.81% | 0.8871 | **$0.006 \pm 0.002\text{ ms}$** | **180,677.6** | **105.9 KB** |
 
 ---
 
@@ -74,18 +74,21 @@ X-IDS unites:
    - Achieved a **42.7% error reduction** on primary payload tracking (`tcp.len` MAE of **140.34 B** vs. 244.98 B baseline) with **0.0% saturation clamping** on attack bursts.
    - Normal-only held-out validation confirmed sub-0.35% relative error across physical ranges.
 2. **Twin Forecast Fidelity as a Driver of Deviation-Space Detection Quality (Empirical Finding):**
-   - Across three independent sessions, as twin residual magnitude decreased ~1,000x, pure-deviation-only detection accuracy rose 33.3 percentage points:
+   - Across three independent sessions, as twin residual magnitude decreased ~1,000x, pure-deviation-only detection accuracy rose 33.5 percentage points:
 
-   | Session | Mean Residual | Pure-Dev RF | Pure-Dev XGB |
+   | Session | Steady-State Median Residual | Pure-Dev RF | Pure-Dev XGB |
    |---|---:|---:|---:|
-   | Baseline (unconstrained MLP) | ~14,000,000 B | 39.1% | 38.7% |
-   | Log1p Scaler Fix v1 | ~1,900,000 B | 62.0% | 63.0% |
-   | Log1p Robust Twin v2 (current) | ~4,000 B | **72.41%** | **71.88%** |
+   | Baseline (unconstrained MLP) | ~14,000,000 B (Unbounded Noise) | 39.10% | 38.70% |
+   | Log1p Scaler Fix v1 | ~1,900,000 B | 62.30% | 63.05% |
+   | Log1p Robust Twin v2 (Retrained) | **1.84 KB (Mean of Medians)** | **72.63%** | **71.84%** |
 
    - **Conclusion:** Twin calibration quality is a first-order driver of IDS deviation-space discriminative power.
 3. **Causal Mechanics of Application Anomaly Detection & SQLi Mechanism Resolution (Track B):**
    - Continuous packet length and flow deviation residuals (`dev_tcp.len`, `http.content_length`, `http.response`) are effective physical discriminators for web/payload attacks without high-latency string tokenization overhead.
-   - **Empirical Grounding for SQLi:** Audit confirmed `http.content_length` is constant zero across all 4,573 SQL_injection samples in Edge-IIoTset. Consequently, the model relies on connection teardown signatures (`tcp.connection.fin`, `tcp.connection.rst`, `tcp.ack`, `arp.opcode`), achieving $F_1 = 0.8940$ grounded in authentic network behavior.
+   - **Empirical Grounding for SQLi:** Audit confirmed `http.content_length` is constant zero across all 4,573 SQL_injection samples in Edge-IIoTset. Consequently, the model relies on connection teardown signatures (`tcp.connection.fin`, `tcp.connection.rst`, `tcp.ack`, `arp.opcode`), achieving $F_1 = 0.8930$ grounded in authentic network behavior.
+4. **Zero-Shot Generalization on TON_IoT (50k Unseen Samples):**
+   - **XGB-Raw Baseline:** $65.21\%$ Accuracy, $0.7894$ Macro-F1, $100.00\%$ Precision, 0 False Positives ($17,395$ False Negatives).
+   - **XGB-Twin-Augmented-v2:** **$99.29\%$ Accuracy**, **$0.9964$ Macro-F1**, **$100.00\%$ Precision**, 0 False Positives ($355$ False Negatives).
 
 ## 3. Operational Confidence Filter Reconciliation
 - **Canonical Alert Suppression Rate:** **30.0%**
@@ -95,5 +98,5 @@ X-IDS unites:
 ---
 
 ## 4. Hardware Deployment Recommendations
-1. **Config 4 (Fast-Inference XGBoost, 105.9 KB, 0.006 ms):** Best suited for high-frequency distributed field sensors where maximum throughput ($>150,000\text{ samples/sec}$) is essential.
-2. **Config 2 (Quantized Twin + Standard RF, 5.63 MB, 0.209 ms):** Best suited for safety-critical plant gateways and SCADA systems where physical twin verification ($|y_t - \hat{y}_t|$) is required before executing actuators or alarms.
+1. **Config 4 (Fast-Inference XGBoost, 105.9 KB, 0.006 ms):** Best suited for high-frequency distributed field sensors where maximum throughput ($>180,000\text{ samples/sec}$) is essential.
+2. **Config 2 (Quantized Twin + Standard RF, 5.61 MB, 0.220 ms):** Best suited for safety-critical plant gateways and SCADA systems where physical twin verification ($|y_t - \hat{y}_t|$) is required before executing actuators or alarms.
