@@ -92,6 +92,15 @@ $$\mathcal{A}(\mathbf{z}_t) = \begin{cases} \text{PASS (Alert)}, & \text{if } \g
 
 *(\*) Indicates low sample support ($n < 200$). MITM's F1 degradation under twin augmentation is documented as a known limitation: Z-score normalization was mathematically and empirically proven invariant for tree-based models ($\Delta = 0.0000$), confirming that future MITM improvement requires class-weight balancing or SMOTE rather than residual rescaling.*
 
+#### Trade-off Analysis: Pure-Deviation Standalone Sparsity vs. Fused-Model Behavioral Gains
+The transition from absolute sequence counters to within-flow delta sequence tracking reduced pure-deviation-only classification accuracy (RF: $72.63\% \to 58.50\%$, XGB: $71.84\% \to 57.68\%$). Under absolute sequence numbers, random-port attack handshakes produced multi-million-byte jump residuals that functioned as an artificial volume proxy. Replacing these with authentic per-flow deltas eliminated spurious magnitude leakage, causing delta residuals to cluster near zero for single-packet probes.
+
+Crucially, the fused Twin-Augmented model's aggregate accuracy remained robust ($94.91\%$) while measurably improving on the two weakest-performing stealth and payload attack classes:
+1. **MITM F1 Delta:** Improved from $\Delta = -0.0599$ ($0.5208$) to $\Delta = -0.0319$ ($0.5487$).
+2. **Ransomware Parity:** Flipped from *"Raw Baseline Preferred"* ($\Delta = -0.0188$) to *"Statistical Parity"* ($\Delta = -0.0090$, F1 = $0.9295$).
+
+This proves that the delta-sequence transformation trades standalone residual volume separability for noise-free velocity tracking that enhances fused-model classification on complex behavioral threats.
+
 ### C. Edge-Resource Benchmarking: Dual Latency Architecture
 
 To reconcile isolated model inference speed with real deployed streaming operations, latency is reported across two distinct benchmarks:
@@ -101,10 +110,10 @@ To reconcile isolated model inference speed with real deployed streaming operati
 
 | Configuration | Feature Space | Accuracy (%) | Macro-F1 | Mean Latency $\pm$ Std (ms) | Throughput (samples/s) | Storage (KB) |
 |---|---|---|---|---|---|---|
-| **Config 1: Full Twin + Heavy RF (150 trees)** | Twin-Augmented | **94.13%** | **0.9068** | **$0.446 \pm 0.003\text{ ms}$** | 2,240.1 | 14,546.1 KB |
-| **Config 2: Quantized Twin + Standard RF (100 trees)** | Twin-Augmented | **93.23%** | **0.8973** | **$0.220 \pm 0.019\text{ ms}$** | 4,548.2 | 5,610.0 KB |
-| **Config 3: Quantized Twin + Pruned RF (30 trees)** | Twin-Augmented | 88.88% | 0.8459 | **$0.155 \pm 0.002\text{ ms}$** | 6,462.3 | 457.8 KB |
-| **Config 4: Fast-Inference Edge XGBoost (25 trees)** | Raw Telemetry | 91.81% | 0.8871 | **$0.006 \pm 0.002\text{ ms}$** | **180,677.6** | **105.9 KB** |
+| **Config 1: Full Twin + Heavy RF (150 trees)** | Twin-Augmented | **94.27%** | **0.9103** | **$0.499 \pm 0.034\text{ ms}$** | 2,004.0 | 14,245.6 KB |
+| **Config 2: Quantized Twin + Standard RF (100 trees)** | Twin-Augmented | **93.15%** | **0.8964** | **$0.208 \pm 0.017\text{ ms}$** | 4,800.8 | 5,421.8 KB |
+| **Config 3: Quantized Twin + Pruned RF (30 trees)** | Twin-Augmented | 88.21% | 0.8393 | **$0.201 \pm 0.030\text{ ms}$** | 4,987.0 | 473.4 KB |
+| **Config 4: Fast-Inference Edge XGBoost (25 trees)** | Raw Telemetry | 91.81% | 0.8871 | **$0.005 \pm 0.002\text{ ms}$** | **192,258.9** | **105.9 KB** |
 
 #### Table B: End-to-End Decision Pipeline Latency (500 Live Streaming Telemetry Samples)
 *Measures complete end-to-end telemetry ingestion, Digital Twin forecasting, XGBoost classification, on-demand SHAP TreeExplainer attribution, and Operational Confidence Filter triage.*

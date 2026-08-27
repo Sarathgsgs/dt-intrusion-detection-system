@@ -671,19 +671,22 @@ export default function App() {
                 Real-time feature attributions computed per incoming alert by SHAP TreeExplainer.
               </p>
 
-              {selectedAlert?.shap_explanation ? (
+              {selectedAlert?.shap_explanation && selectedAlert.shap_explanation.top_features?.length > 0 ? (
                 <div style={{ height: '350px', width: '100%' }}>
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart
                       layout="vertical"
                       data={selectedAlert.shap_explanation.top_features}
-                      margin={{ top: 10, right: 30, left: 80, bottom: 5 }}
+                      margin={{ top: 10, right: 30, left: 110, bottom: 5 }}
                     >
                       <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
                       <XAxis type="number" stroke="#64748b" tick={{ fontSize: 11 }} />
-                      <YAxis dataKey="feature" type="category" stroke="#64748b" tick={{ fontSize: 11 }} />
-                      <Tooltip contentStyle={{ background: '#0f172a', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px' }} />
-                      <Bar dataKey="shap_value" name="SHAP Impact Score">
+                      <YAxis dataKey="feature" type="category" stroke="#94a3b8" tick={{ fontSize: 11 }} width={100} />
+                      <Tooltip 
+                        contentStyle={{ background: '#0f172a', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px' }}
+                        formatter={(val) => [Number(val).toFixed(4), "SHAP Value"]}
+                      />
+                      <Bar dataKey="shap_value" name="SHAP Impact Score" radius={[0, 4, 4, 0]}>
                         {selectedAlert.shap_explanation.top_features.map((entry, index) => (
                           <Cell key={`cell-${index}`} fill={entry.shap_value > 0 ? '#ef4444' : '#10b981'} />
                         ))}
@@ -831,15 +834,26 @@ export default function App() {
 
             <div style={{ height: '340px', width: '100%', marginBottom: '2rem' }}>
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={modelComparisonData} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
+                <BarChart 
+                  data={modelComparisonData.map(row => ({
+                    ...row,
+                    "Accuracy": Number(row["Accuracy (%)"]),
+                    "Macro-F1 (%)": Number((Number(row["Macro-F1"]) * 100).toFixed(2)),
+                    "Weighted-F1 (%)": Number((Number(row["Weighted-F1"]) * 100).toFixed(2))
+                  }))} 
+                  margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
+                >
                   <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
                   <XAxis dataKey="Model Architecture" stroke="#64748b" tick={{ fontSize: 11 }} />
-                  <YAxis domain={[30, 100]} stroke="#64748b" tick={{ fontSize: 11 }} />
-                  <Tooltip contentStyle={{ background: '#0f172a', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px' }} />
+                  <YAxis domain={[30, 100]} stroke="#64748b" tick={{ fontSize: 11 }} label={{ value: 'Score (%)', angle: -90, position: 'insideLeft', fill: '#94a3b8' }} />
+                  <Tooltip 
+                    contentStyle={{ background: '#0f172a', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px' }} 
+                    formatter={(val, name) => [`${val}%`, name]}
+                  />
                   <Legend />
-                  <Bar dataKey="Accuracy (%)" name="Accuracy (%)" fill="#3b82f6" radius={[4, 4, 0, 0]} />
-                  <Bar dataKey="Macro-F1" name="Macro-F1 (Ratio)" fill="#10b981" radius={[4, 4, 0, 0]} />
-                  <Bar dataKey="Weighted-F1" name="Weighted-F1" fill="#f59e0b" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="Accuracy" name="Accuracy (%)" fill="#3b82f6" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="Macro-F1 (%)" name="Macro-F1 (%)" fill="#10b981" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="Weighted-F1 (%)" name="Weighted-F1 (%)" fill="#f59e0b" radius={[4, 4, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             </div>
@@ -860,11 +874,11 @@ export default function App() {
                   {modelComparisonData.map((row, idx) => (
                     <tr key={idx} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
                       <td style={{ padding: '12px', fontWeight: 600, color: '#f8fafc' }}>{row["Model Architecture"]}</td>
-                      <td style={{ padding: '12px', color: '#10b981', fontWeight: 700 }}>{row["Accuracy (%)"]}%</td>
-                      <td style={{ padding: '12px', color: '#38bdf8', fontWeight: 700 }}>{row["Macro-F1"]}</td>
-                      <td style={{ padding: '12px', color: '#f59e0b' }}>{row["Weighted-F1"]}</td>
-                      <td style={{ padding: '12px' }}>{row["Macro-Precision"]}</td>
-                      <td style={{ padding: '12px' }}>{row["Macro-Recall"]}</td>
+                      <td style={{ padding: '12px', color: '#10b981', fontWeight: 700 }}>{Number(row["Accuracy (%)"]).toFixed(2)}%</td>
+                      <td style={{ padding: '12px', color: '#38bdf8', fontWeight: 700 }}>{Number(row["Macro-F1"]).toFixed(4)}</td>
+                      <td style={{ padding: '12px', color: '#f59e0b' }}>{Number(row["Weighted-F1"]).toFixed(4)}</td>
+                      <td style={{ padding: '12px' }}>{Number(row["Macro-Precision"]).toFixed(4)}</td>
+                      <td style={{ padding: '12px' }}>{Number(row["Macro-Recall"]).toFixed(4)}</td>
                     </tr>
                   ))}
                 </tbody>
