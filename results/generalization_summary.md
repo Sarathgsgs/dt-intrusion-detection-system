@@ -10,7 +10,7 @@
 | Model Architecture | Target Testbed | Accuracy (%) | F1-Score | Precision (%) | Recall (%) | False Positives | False Negatives |
 |---|---|---|---|---|---|---|---|
 | **XGB-Raw Baseline** | TON_IoT (50k) | **65.21%** | **0.7894** | **100.0%** | **65.21%** | 0 | 17395 |
-| **XGB-Twin-Augmented-v2** | TON_IoT (50k) | **99.29%** | **0.9964** | **100.0%** | **99.29%** | 0 | 355 |
+| **XGB-Twin-Augmented-v2** | TON_IoT (50k) | **88.97%** | **0.9416** | **100.0%** | **88.97%** | 0 | 5516 |
 
 ---
 

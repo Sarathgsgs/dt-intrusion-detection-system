@@ -41,11 +41,15 @@ class SystemPipeline:
         self.xai = ExplainabilityModule("models/xgb_fused.pkl", "models/fused_features.pkl", "models/label_encoder.pkl")
         self.confidence_filter = OperationalConfidenceFilter(min_confidence=0.65, min_signature_overlap=1)
         self.confidence_filter.stats = {
-            "total_inspected": 3500,
-            "passed_alerts": 700,
-            "suppressed_alerts": 300,
-            "normal_traffic": 2500
+            "total_inspected": 0,
+            "passed_alerts": 0,
+            "suppressed_alerts": 0,
+            "normal_traffic": 0
         }
+        
+        # Real-time per-flow tracking for delta-sequence calculations
+        self.prev_flow_seq = {}
+        self.prev_flow_ack = {}
         
         # Recent state buffers
         self.recent_alerts = []
@@ -59,8 +63,34 @@ class SystemPipeline:
         record = next(self.stream_generator)
         raw_feature_vector = np.array(record["feature_vector"])
         
+        # Compute real-time per-flow delta sequences for twin continuous telemetry
+        features = record["features"].copy()
+        srcport = features.get("tcp.srcport", 0.0)
+        dstport = features.get("tcp.dstport", 0.0)
+        flow_key = (srcport, dstport)
+        
+        if "tcp.seq" in features:
+            raw_seq = float(features["tcp.seq"])
+            prev_seq = self.prev_flow_seq.get(flow_key, raw_seq)
+            seq_delta = float(np.clip(raw_seq - prev_seq, 0.0, 1e7))
+            self.prev_flow_seq[flow_key] = raw_seq
+            features["tcp.seq_delta"] = seq_delta
+        else:
+            features["tcp.seq_delta"] = 0.0
+            
+        if "tcp.ack" in features:
+            raw_ack = float(features["tcp.ack"])
+            prev_ack = self.prev_flow_ack.get(flow_key, raw_ack)
+            ack_delta = float(np.clip(raw_ack - prev_ack, 0.0, 1e7))
+            self.prev_flow_ack[flow_key] = raw_ack
+            features["tcp.ack_delta"] = ack_delta
+        else:
+            features["tcp.ack_delta"] = 0.0
+            
+        record["features"] = features
+        
         # Extract continuous features for the scope-restricted digital twin
-        cont_feature_vector = np.array([float(record["features"].get(f, 0.0)) for f in self.twin.feature_names])
+        cont_feature_vector = np.array([float(features.get(f, 0.0)) for f in self.twin.feature_names])
         
         # Maintain sliding window for twin
         if len(self.window_buffer) < 5:

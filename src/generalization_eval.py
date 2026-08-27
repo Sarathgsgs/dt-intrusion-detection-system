@@ -83,6 +83,7 @@ def evaluate_dual_generalization(
             mapped_raw[:, i] = 0.0
             
     mapped_raw_df = pd.DataFrame(mapped_raw, columns=raw_feature_names)
+    mapped_raw_df = DigitalTwin.compute_delta_features(mapped_raw_df)
     
     # Compute Zero-Shot Digital Twin Deviations on continuous features
     print("Computing Zero-Shot Digital Twin residual vectors on TON_IoT...")

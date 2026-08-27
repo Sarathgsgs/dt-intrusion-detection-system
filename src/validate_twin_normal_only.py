@@ -31,6 +31,7 @@ def evaluate_normal_only_mae(
     print("=" * 80)
 
     df_all = pd.read_csv(data_csv)
+    df_all = DigitalTwin.compute_delta_features(df_all)
 
     # ── Hold-out: use last 20% of Normal samples as held-out validation ──────────
     normal_df = df_all[df_all["Attack_type"] == "Normal"].reset_index(drop=True)
