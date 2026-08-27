@@ -23,38 +23,38 @@ X-IDS unites:
 
 ## 1. Experimental Results & Validated Performance Metrics
 
-### A. Multi-Class IDS Model Suite Performance (13,999 Test Samples)
+#### A. Multi-Class IDS Model Suite Performance (13,999 Test Samples)
 
 | Model Architecture | Feature Space | Accuracy (%) | Macro-F1 | Weighted-F1 | Inference Latency |
 |---|---|---|---|---|---|
-| **RF-Raw (Baseline)** | Raw Telemetry (34 features) | 94.77% | 0.9177 | 0.9499 | 0.0387 ms/sample |
-| **XGB-Raw (Baseline)** | Raw Telemetry (34 features) | **95.00%** | **0.9200** | **0.9522** | **0.0340 ms/sample** |
-| **RF-Deviation (Pure)** | Continuous Residuals (9 features) | 72.41% | 0.7050 | 0.7254 | 0.0248 ms/sample |
-| **XGB-Deviation (Pure)** | Continuous Residuals (9 features) | 71.88% | 0.6951 | 0.7195 | 0.0549 ms/sample |
-| **RF-Twin-Augmented-v2** | Raw + Continuous Residuals (43) | **94.19%** | **0.9093** | **0.9432** | 0.0429 ms/sample |
-| **XGB-Twin-Augmented-v2** | Raw + Continuous Residuals (43) | **94.85%** | **0.9139** | **0.9494** | 0.0467 ms/sample |
+| **RF-Raw (Baseline)** | Raw Telemetry (34 features) | 94.77% | 0.9177 | 0.9499 | 0.0222 ms/sample |
+| **XGB-Raw (Baseline)** | Raw Telemetry (34 features) | **95.00%** | **0.9200** | **0.9522** | **0.0445 ms/sample** |
+| **RF-Deviation (Pure)** | Continuous Delta Residuals (9 features) | 58.50% | 0.5623 | 0.5737 | 0.0279 ms/sample |
+| **XGB-Deviation (Pure)** | Continuous Delta Residuals (9 features) | 57.68% | 0.5480 | 0.5648 | 0.0753 ms/sample |
+| **RF-Twin-Augmented-v2** | Raw + Continuous Residuals (43) | **94.24%** | **0.9099** | **0.9437** | 0.0274 ms/sample |
+| **XGB-Twin-Augmented-v2** | Raw + Continuous Residuals (43) | **94.91%** | **0.9153** | **0.9502** | 0.0333 ms/sample |
 
 ### B. 4-Model 15-Class Per-Attack Breakdown Table
 
 | Attack Class | Support | RF-Raw F1 | XGB-Raw F1 | RF-Twin-v2 F1 | XGB-Twin-v2 F1 | $\Delta F_1$ (XGB) | Outcome |
 |---|---|---|---|---|---|---|---|
-| **XSS** | 892 | 0.9058 | 0.9084 | 0.8942 | **0.9094** | `+0.0010` | `Statistical Parity` |
-| **Uploading** | 911 | 0.9167 | 0.9221 | 0.9110 | **0.9224** | `+0.0003` | `Statistical Parity` |
+| **Backdoor** | 904 | 0.9837 | 0.9848 | 0.9747 | **0.9854** | `+0.0006` | `Statistical Parity` |
 | **DDoS_ICMP** | 1250 | 0.9996 | **0.9996** | 0.9996 | **0.9996** | `0.0000` | `Exact Parity` |
 | **DDoS_TCP** | 909 | 1.0000 | **1.0000** | 1.0000 | **1.0000** | `0.0000` | `Exact Parity` |
 | **DDoS_UDP** | 1286 | 1.0000 | **1.0000** | 1.0000 | **1.0000** | `0.0000` | `Exact Parity` |
-| **Normal** | 2156 | 0.9979 | **0.9979** | 0.9974 | 0.9977 | `-0.0002` | `Exact Parity` |
-| **Backdoor** | 904 | 0.9837 | **0.9848** | 0.9770 | 0.9843 | `-0.0006` | `Statistical Parity` |
-| **Port_Scanning** | 893 | 0.9511 | **0.9511** | 0.9481 | 0.9501 | `-0.0011` | `Statistical Parity` |
-| **SQL_injection** | 915 | 0.8873 | **0.8963** | 0.8745 | 0.8940 | `-0.0023` | `Statistical Parity` |
-| **Vulnerability_scanner** | 894 | 0.9773 | **0.9759** | 0.9742 | 0.9720 | `-0.0039` | `Statistical Parity` |
-| **Password** | 886 | 0.8915 | **0.8990** | 0.8679 | 0.8947 | `-0.0043` | `Statistical Parity` |
-| **DDoS_HTTP** | 937 | 0.8472 | **0.8571** | 0.8306 | 0.8525 | `-0.0047` | `Statistical Parity` |
-| **Fingerprinting \*** | 89 | 0.8889 | **0.8889** | 0.8820 | 0.8820 | `-0.0069` | `Statistical Parity` |
-| **Ransomware** | 969 | 0.9379 | **0.9385** | 0.9224 | 0.9202 | `-0.0183` | `Raw Preferred` |
-| **MITM \*** | 108 | 0.5806 | **0.5806** | 0.5600 | 0.5299 | `-0.0508` | `Raw Preferred` |
+| **Normal** | 2156 | 0.9979 | **0.9979** | 0.9977 | **0.9979** | `0.0000` | `Statistical Parity` |
+| **Password** | 886 | 0.8915 | **0.8990** | 0.8686 | 0.8981 | `-0.0008` | `Statistical Parity` |
+| **Uploading** | 911 | 0.9167 | 0.9221 | 0.9159 | 0.9209 | `-0.0012` | `Statistical Parity` |
+| **Port_Scanning** | 893 | 0.9511 | 0.9511 | 0.9471 | 0.9494 | `-0.0017` | `Statistical Parity` |
+| **XSS** | 892 | 0.9058 | 0.9084 | 0.8942 | 0.9066 | `-0.0018` | `Statistical Parity` |
+| **SQL_injection** | 915 | 0.8873 | 0.8963 | 0.8733 | 0.8939 | `-0.0025` | `Statistical Parity` |
+| **Vulnerability_scanner** | 894 | 0.9773 | 0.9759 | 0.9748 | 0.9730 | `-0.0029` | `Statistical Parity` |
+| **DDoS_HTTP** | 937 | 0.8472 | 0.8571 | 0.8349 | 0.8516 | `-0.0056` | `Statistical Parity` |
+| **Ransomware** | 969 | 0.9379 | 0.9385 | 0.9232 | 0.9295 | `-0.0090` | `Statistical Parity` |
+| **Fingerprinting \*** | 89 | 0.8889 | 0.8889 | 0.8765 | 0.8750 | `-0.0139` | `Raw Preferred` |
+| **MITM \*** | 108 | 0.5806 | 0.5806 | 0.5684 | 0.5487 | `-0.0319` | `Raw Preferred` |
 
-*(\*) Indicates low sample support ($n < 200$). MITM's F1 drop under twin augmentation is a known limitation: the log1p compression compresses absolute deviation magnitudes across all features. Compression-ratio analysis (DDoS_TCP/MITM = 9,456x) confirms MITM deviation signals remain distinguishable from normal; the regression is attributable to sampling variance at n=538. See `results/mitm_regression_report.md`.*
+*(\*) Indicates low sample support ($n < 200$). MITM's F1 drop under twin augmentation is a known limitation: Z-score normalization was mathematically and empirically proven invariant for tree-based models ($\Delta = 0.0000$), confirming that future MITM improvement requires class-weight balancing or SMOTE rather than residual rescaling.*
 
 ### C. Edge-Resource Benchmarking: Dual Latency Architecture
 

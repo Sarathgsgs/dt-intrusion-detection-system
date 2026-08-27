@@ -38,6 +38,10 @@ class DeviationEngine:
         """
         Computes continuous deviation residuals across the dataframe.
         """
+        missing_feats = [f for f in self.continuous_features if f not in df.columns]
+        if missing_feats:
+            df = DigitalTwin.compute_delta_features(df)
+            
         print(f"Computing Digital Twin forecasts for {len(df)} samples across {len(self.continuous_features)} continuous signals...")
         actual_continuous = df[self.continuous_features].values
         predicted_continuous = self.twin.compute_dataset_predictions(df)

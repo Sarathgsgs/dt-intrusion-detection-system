@@ -63,34 +63,34 @@ $$\mathcal{A}(\mathbf{z}_t) = \begin{cases} \text{PASS (Alert)}, & \text{if } \g
 
 | Model Architecture | Feature Space | Accuracy (%) | Macro-F1 | Weighted-F1 | Inference Latency |
 |---|---|---|---|---|---|
-| **RF-Raw (Baseline)** | Raw Telemetry (34 features) | 94.77% | 0.9177 | 0.9499 | 0.0387 ms/sample |
-| **XGB-Raw (Baseline)** | Raw Telemetry (34 features) | **95.00%** | **0.9200** | **0.9522** | **0.0340 ms/sample** |
-| **RF-Deviation (Pure)** | Continuous Residuals (9 features) | 72.41% | 0.7050 | 0.7254 | 0.0248 ms/sample |
-| **XGB-Deviation (Pure)** | Continuous Residuals (9 features) | 71.88% | 0.6951 | 0.7195 | 0.0549 ms/sample |
-| **RF-Twin-Augmented-v2** | Raw + Continuous Residuals (43) | **94.09%** | **0.9076** | **0.9421** | 0.0281 ms/sample |
-| **XGB-Twin-Augmented-v2** | Raw + Continuous Residuals (43) | **94.81%** | **0.9125** | **0.9490** | 0.0243 ms/sample |
+| **RF-Raw (Baseline)** | Raw Telemetry (34 features) | 94.77% | 0.9177 | 0.9499 | 0.0222 ms/sample |
+| **XGB-Raw (Baseline)** | Raw Telemetry (34 features) | **95.00%** | **0.9200** | **0.9522** | **0.0445 ms/sample** |
+| **RF-Deviation (Pure)** | Continuous Delta Residuals (9 features) | 58.50% | 0.5623 | 0.5737 | 0.0279 ms/sample |
+| **XGB-Deviation (Pure)** | Continuous Delta Residuals (9 features) | 57.68% | 0.5480 | 0.5648 | 0.0753 ms/sample |
+| **RF-Twin-Augmented-v2** | Raw + Continuous Residuals (43) | **94.24%** | **0.9099** | **0.9437** | 0.0274 ms/sample |
+| **XGB-Twin-Augmented-v2** | Raw + Continuous Residuals (43) | **94.91%** | **0.9153** | **0.9502** | 0.0333 ms/sample |
 
 ### B. Fine-Grained 4-Model Per-Attack Performance (15 Classes on 13,999 Test Samples)
 
 | Attack Class | Category | Support | RF-Raw F1 | XGB-Raw F1 | RF-Twin-v2 F1 | XGB-Twin-v2 F1 | $\Delta F_1$ (XGB) | Outcome |
 |---|---|---:|---:|---:|---:|---:|---:|---|
-| **Port_Scanning** | Volumetric / Recon | 893 | 0.9511 | 0.9511 | 0.9475 | **0.9518** | `+0.0007` | `Statistical Parity` |
+| **Backdoor** | Application / Payload | 904 | 0.9837 | 0.9848 | 0.9747 | **0.9854** | `+0.0006` | `Statistical Parity` |
 | **DDoS_TCP** | Volumetric Flood | 909 | 1.0000 | **1.0000** | 1.0000 | **1.0000** | `0.0000` | `Exact Parity` |
 | **DDoS_UDP** | Volumetric Flood | 1286 | 1.0000 | **1.0000** | 1.0000 | **1.0000** | `0.0000` | `Exact Parity` |
-| **DDoS_ICMP** | Volumetric Flood | 1250 | 0.9996 | **0.9996** | 0.9992 | **0.9996** | `0.0000` | `Exact Parity` |
-| **Normal** | Healthy Baseline | 2156 | 0.9979 | **0.9979** | 0.9972 | 0.9977 | `-0.0002` | `Statistical Parity` |
-| **Backdoor** | Application / Payload | 904 | 0.9837 | **0.9848** | 0.9770 | 0.9832 | `-0.0017` | `Statistical Parity` |
-| **XSS** | Application / Payload | 892 | 0.9058 | **0.9084** | 0.8976 | 0.9067 | `-0.0017` | `Statistical Parity` |
-| **Uploading** | Application / Payload | 911 | 0.9167 | **0.9221** | 0.9086 | 0.9201 | `-0.0020` | `Statistical Parity` |
-| **SQL_injection** | Application / Payload | 915 | 0.8873 | **0.8963** | 0.8707 | 0.8930 | `-0.0033` | `Statistical Parity` |
-| **Password** | Application / Payload | 886 | 0.8915 | **0.8990** | 0.8615 | 0.8956 | `-0.0034` | `Statistical Parity` |
-| **Vulnerability_scanner** | Application / Payload | 894 | 0.9773 | **0.9759** | 0.9742 | 0.9720 | `-0.0039` | `Statistical Parity` |
-| **DDoS_HTTP** | Volumetric Flood | 937 | 0.8472 | **0.8571** | 0.8261 | 0.8522 | `-0.0050` | `Statistical Parity` |
-| **Fingerprinting \*** | Stealth Recon | 89 | 0.8889 | **0.8889** | 0.8696 | 0.8750 | `-0.0139` | `Raw Preferred` |
-| **Ransomware** | Application / Payload | 969 | 0.9379 | **0.9385** | 0.9224 | 0.9197 | `-0.0188` | `Raw Preferred` |
-| **MITM \*** | Stealth Behavioral | 108 | 0.5806 | **0.5806** | 0.5620 | 0.5208 | `-0.0599` | `Raw Preferred` |
+| **DDoS_ICMP** | Volumetric Flood | 1250 | 0.9996 | **0.9996** | 0.9996 | **0.9996** | `0.0000` | `Exact Parity` |
+| **Normal** | Healthy Baseline | 2156 | 0.9979 | **0.9979** | 0.9977 | **0.9979** | `0.0000` | `Statistical Parity` |
+| **Password** | Application / Payload | 886 | 0.8915 | **0.8990** | 0.8686 | 0.8981 | `-0.0008` | `Statistical Parity` |
+| **Uploading** | Application / Payload | 911 | 0.9167 | **0.9221** | 0.9159 | 0.9209 | `-0.0012` | `Statistical Parity` |
+| **Port_Scanning** | Volumetric / Recon | 893 | 0.9511 | **0.9511** | 0.9471 | 0.9494 | `-0.0017` | `Statistical Parity` |
+| **XSS** | Application / Payload | 892 | 0.9058 | **0.9084** | 0.8942 | 0.9066 | `-0.0018` | `Statistical Parity` |
+| **SQL_injection** | Application / Payload | 915 | 0.8873 | **0.8963** | 0.8733 | 0.8939 | `-0.0025` | `Statistical Parity` |
+| **Vulnerability_scanner** | Application / Payload | 894 | 0.9773 | **0.9759** | 0.9748 | 0.9730 | `-0.0029` | `Statistical Parity` |
+| **DDoS_HTTP** | Volumetric Flood | 937 | 0.8472 | **0.8571** | 0.8349 | 0.8516 | `-0.0056` | `Statistical Parity` |
+| **Ransomware** | Application / Payload | 969 | 0.9379 | **0.9385** | 0.9232 | 0.9295 | `-0.0090` | `Statistical Parity` |
+| **Fingerprinting \*** | Stealth Recon | 89 | 0.8889 | **0.8889** | 0.8765 | 0.8750 | `-0.0139` | `Raw Preferred` |
+| **MITM \*** | Stealth Behavioral | 108 | 0.5806 | **0.5806** | 0.5684 | 0.5487 | `-0.0319` | `Raw Preferred` |
 
-*(\*) Indicates low sample support ($n < 200$). MITM's F1 degradation under twin augmentation is documented as a known limitation: the log1p compression reduces absolute deviation magnitudes, which may disproportionately affect subtle, low-amplitude stealth attacks. Task 3 investigation (n=538) confirmed this does not reflect structural signal suppression — DDoS/MITM compression ratio = 9,456x confirms MITM deviation signals remain distinguishable — and the regression is attributable to sampling variance rather than bound over-correction. See `results/mitm_regression_report.md`.*
+*(\*) Indicates low sample support ($n < 200$). MITM's F1 degradation under twin augmentation is documented as a known limitation: Z-score normalization was mathematically and empirically proven invariant for tree-based models ($\Delta = 0.0000$), confirming that future MITM improvement requires class-weight balancing or SMOTE rather than residual rescaling.*
 
 ### C. Edge-Resource Benchmarking: Dual Latency Architecture
 

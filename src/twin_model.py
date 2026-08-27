@@ -12,15 +12,15 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.neural_network import MLPRegressor
 from sklearn.metrics import mean_squared_error, mean_absolute_error
 
-# Continuous physical features suitable for sequence regression
+# Continuous physical features suitable for sequence regression (using per-flow deltas for sequence counters)
 CONTINUOUS_FEATURES = [
     "icmp.checksum",
     "icmp.seq_le",
     "http.content_length",
-    "tcp.ack",
+    "tcp.ack_delta",
     "tcp.checksum",
     "tcp.len",
-    "tcp.seq",
+    "tcp.seq_delta",
     "udp.stream",
     "udp.time_delta"
 ]
@@ -30,18 +30,18 @@ PHYSICAL_BOUNDS = {
     "icmp.checksum": (0.0, 65535.0),
     "icmp.seq_le": (0.0, 65535.0),
     "http.content_length": (0.0, 10000000.0),
-    "tcp.ack": (0.0, 4294967295.0),
+    "tcp.ack_delta": (0.0, 10000000.0),
     "tcp.checksum": (0.0, 65535.0),
     "tcp.len": (0.0, 65535.0),
-    "tcp.seq": (0.0, 4294967295.0),
+    "tcp.seq_delta": (0.0, 10000000.0),
     "udp.stream": (0.0, 1000000.0),
     "udp.time_delta": (0.0, 3600.0)
 }
 
 # Per-feature maximum log-space bounds corresponding strictly to valid sub-saturation physical ceilings:
 FEATURE_LOG_CLIPS = {
-    "tcp.seq": 22.18,
-    "tcp.ack": 22.18,
+    "tcp.seq_delta": 16.11,
+    "tcp.ack_delta": 16.11,
     "tcp.len": 11.08,
     "icmp.checksum": 11.08,
     "icmp.seq_le": 11.08,
@@ -78,6 +78,32 @@ class DigitalTwin:
         self.feature_names = CONTINUOUS_FEATURES.copy()
         self.is_fitted = False
         
+    @staticmethod
+    def compute_delta_features(df: pd.DataFrame) -> pd.DataFrame:
+        """
+        Computes per-flow sequence advance deltas for tcp.seq and tcp.ack.
+        """
+        df_out = df.copy()
+        flow_cols = ["tcp.srcport", "tcp.dstport"] if ("tcp.srcport" in df_out.columns and "tcp.dstport" in df_out.columns) else None
+        
+        if "tcp.seq" in df_out.columns:
+            if flow_cols:
+                df_out["tcp.seq_delta"] = df_out.groupby(flow_cols)["tcp.seq"].diff().fillna(0.0).clip(lower=0.0, upper=1e7)
+            else:
+                df_out["tcp.seq_delta"] = df_out["tcp.seq"].diff().fillna(0.0).clip(lower=0.0, upper=1e7)
+        elif "tcp.seq_delta" not in df_out.columns:
+            df_out["tcp.seq_delta"] = 0.0
+            
+        if "tcp.ack" in df_out.columns:
+            if flow_cols:
+                df_out["tcp.ack_delta"] = df_out.groupby(flow_cols)["tcp.ack"].diff().fillna(0.0).clip(lower=0.0, upper=1e7)
+            else:
+                df_out["tcp.ack_delta"] = df_out["tcp.ack"].diff().fillna(0.0).clip(lower=0.0, upper=1e7)
+        elif "tcp.ack_delta" not in df_out.columns:
+            df_out["tcp.ack_delta"] = 0.0
+            
+        return df_out
+
     def _transform_in(self, arr: np.ndarray) -> np.ndarray:
         if self.use_log1p:
             return np.log1p(np.maximum(0, arr))
@@ -109,6 +135,11 @@ class DigitalTwin:
             self.feature_names = [f for f in feature_cols if f in CONTINUOUS_FEATURES]
         else:
             self.feature_names = CONTINUOUS_FEATURES.copy()
+            
+        # Ensure all required continuous features exist in normal_df
+        missing_feats = [f for f in self.feature_names if f not in normal_df.columns]
+        if missing_feats:
+            normal_df = self.compute_delta_features(normal_df)
             
         print(f"Digital Twin configured for {len(self.feature_names)} Scope-Restricted Continuous Features:")
         print(f"  {self.feature_names}")
@@ -169,6 +200,10 @@ class DigitalTwin:
         """
         Vectorized computation across full dataset with physical bounding enforcement.
         """
+        missing_feats = [f for f in self.feature_names if f not in df.columns]
+        if missing_feats:
+            df = self.compute_delta_features(df)
+            
         raw_values = df[self.feature_names].values
         transformed_values = self._transform_in(raw_values)
         scaled_values = self.scaler.transform(transformed_values)
