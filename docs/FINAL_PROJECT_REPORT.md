@@ -12,12 +12,12 @@
 Industrial IoT (IIoT) infrastructures increasingly suffer from sophisticated multi-vector cyber-attacks that standard black-box machine learning models struggle to explain. This project delivers **X-IDS**, an end-to-end, resource-aware, and explainable intrusion detection framework designed specifically for resource-constrained edge gateways and SCADA/ICS controllers. 
 
 X-IDS unites:
-1. **A Scope-Restricted Log1p Robust Digital Twin Forecaster** with log-space normalization ($\log(1+x)$) and L2 regularization to predict expected healthy telemetry dynamics without ceiling-clamping (0.0% clamp invocations).
-2. **A Targeted Residual Deviation Engine** that computes continuous discrepancy vectors ($|y_t - \hat{y}_t|$), elevating pure deviation accuracy to **$72.41\%$**.
-3. **Multi-Class IDS Classifiers** operating on a 43-feature Twin-Augmented space, achieving **94.85% accuracy** (within 0.15% of raw baseline) across 15 distinct threat categories.
-4. **Fine-Grained 15-Class 4-Model Parity Validation** demonstrating statistical parity across 13 of 15 classes (including $F_1 = 1.0000$ on volumetric DDoS floods and superior performance on XSS and Uploading).
+1. **A Scope-Restricted Log1p Robust Digital Twin Forecaster** with log-space normalization ($\log(1+x)$), per-flow sequence advance deltas, and L2 regularization to predict expected healthy telemetry dynamics without ceiling-clamping (0.0% clamp invocations).
+2. **A Targeted Residual Deviation Engine** that computes continuous discrepancy vectors ($|\mathbf{x}_t - \hat{\mathbf{x}}_t|$), achieving **$58.50\%$ pure delta residual accuracy** ($0.5623$ Macro-F1).
+3. **Multi-Class IDS Classifiers** operating on a 43-feature Twin-Augmented space, achieving **94.91% accuracy** (within 0.09% of raw baseline) across 15 distinct threat categories.
+4. **Fine-Grained 15-Class 4-Model Parity Validation** demonstrating statistical parity across 13 of 15 classes (including $F_1 = 1.0000$ on volumetric DDoS floods and superior performance on Backdoor, XSS, and Uploading).
 5. **A Local SHAP Explainer & Operational Confidence Filter** that suppresses **30.0%** (range: 28.6% - 31.4%) of ambiguous false alarms.
-6. **Edge Hardware Benchmarks** proving sub-millisecond latency ($0.006\text{ ms} - 0.457\text{ ms}$) and compact memory footprint ($105.9\text{ KB} - 14.58\text{ MB}$).
+6. **Edge Hardware Benchmarks** proving sub-millisecond latency ($0.005\text{ ms} - 0.499\text{ ms}$) and compact memory footprint ($105.9\text{ KB} - 14.25\text{ MB}$).
 
 ---
 
@@ -33,6 +33,13 @@ X-IDS unites:
 | **XGB-Deviation (Pure)** | Continuous Delta Residuals (9 features) | 57.68% | 0.5480 | 0.5648 | 0.0753 ms/sample |
 | **RF-Twin-Augmented-v2** | Raw + Continuous Residuals (43) | **94.24%** | **0.9099** | **0.9437** | 0.0274 ms/sample |
 | **XGB-Twin-Augmented-v2** | Raw + Continuous Residuals (43) | **94.91%** | **0.9153** | **0.9502** | 0.0333 ms/sample |
+
+#### Pure-Deviation Trade-off Finding & Behavioral Attack Improvements
+After switching to per-flow delta sequence tracking, the deviation-only models became less accurate on their own (dropping to 58.50% RF / 57.68% XGB), because the new delta features are less spread out for most traffic. But the full twin-augmented system stayed just as accurate overall (94.91%), and specifically got better at detecting MITM and Ransomware attacks -- the two attack types it was previously weakest at. Specifically:
+- **MITM F1:** Improved from $0.5208 \to \mathbf{0.5487}$ (narrowing the raw gap from $\Delta = -0.0599 \to \mathbf{-0.0319}$).
+- **Ransomware F1:** Improved from $0.9197 \to \mathbf{0.9295}$ (flipping from *"Raw Baseline Preferred"* to *"Statistical Parity"*).
+
+So this was a worthwhile trade: less standalone signal from the deviation features alone, but better real-world detection from the combined system.
 
 ### B. 4-Model 15-Class Per-Attack Breakdown Table
 
@@ -61,10 +68,10 @@ X-IDS unites:
 #### Table A: Standalone Model Inference Latency (Isolated Forward Pass)
 | Configuration | Feature Space | Accuracy (%) | Macro-F1 | Mean Latency $\pm$ Std (ms) | Throughput (samples/s) | Storage (KB) |
 |---|---|---|---|---|---|---|
-| **Config 1: Full Twin + Heavy RF (150 trees)** | Twin-Augmented | **94.13%** | **0.9068** | **$0.446 \pm 0.003\text{ ms}$** | 2,240.1 | 14,546.1 KB |
-| **Config 2: Quantized Twin + Standard RF (100 trees)** | Twin-Augmented | **93.23%** | **0.8973** | **$0.220 \pm 0.019\text{ ms}$** | 4,548.2 | 5,610.0 KB |
-| **Config 3: Quantized Twin + Pruned RF (30 trees)** | Twin-Augmented | 88.88% | 0.8459 | **$0.155 \pm 0.002\text{ ms}$** | 6,462.3 | 457.8 KB |
-| **Config 4: Fast-Inference Edge XGBoost (25 trees)** | Raw Telemetry | 91.81% | 0.8871 | **$0.006 \pm 0.002\text{ ms}$** | **180,677.6** | **105.9 KB** |
+| **Config 1: Full Twin + Heavy RF (150 trees)** | Twin-Augmented | **94.27%** | **0.9103** | **$0.499 \pm 0.034\text{ ms}$** | 2,004.0 | 14,245.6 KB |
+| **Config 2: Quantized Twin + Standard RF (100 trees)** | Twin-Augmented | **93.15%** | **0.8964** | **$0.208 \pm 0.017\text{ ms}$** | 4,800.8 | 5,421.8 KB |
+| **Config 3: Quantized Twin + Pruned RF (30 trees)** | Twin-Augmented | 88.21% | 0.8393 | **$0.201 \pm 0.030\text{ ms}$** | 4,987.0 | 473.4 KB |
+| **Config 4: Fast-Inference Edge XGBoost (25 trees)** | Raw Telemetry | 91.81% | 0.8871 | **$0.005 \pm 0.002\text{ ms}$** | **192,258.9** | **105.9 KB** |
 
 #### Table B: End-to-End Decision Pipeline Latency (500 Live Streaming Telemetry Samples)
 | Pipeline Stage / Traffic Class | Synchronous SHAP (Baseline) | Conditional SHAP (Optimized) | Latency Reduction |
