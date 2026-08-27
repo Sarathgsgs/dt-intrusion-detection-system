@@ -91,8 +91,11 @@ class SystemPipeline:
             "ground_truth": record["attack_type"]
         }
         
-        # SHAP attribution
-        shap_exp = self.xai.explain_sample(fused_vector, top_k=5)
+        # Conditional SHAP attribution (Optimization 1: triggers only for suspicious/attack traffic)
+        if confidence >= 0.50 and pred_class != "Normal":
+            shap_exp = self.xai.explain_sample(fused_vector, top_k=5)
+        else:
+            shap_exp = {"top_features": [], "expected_value": 0.0, "prediction": pred_class}
         
         # Operational Confidence Filter
         filter_result = self.confidence_filter.evaluate(pred_result, shap_exp)

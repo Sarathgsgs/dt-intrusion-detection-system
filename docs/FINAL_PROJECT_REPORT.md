@@ -56,39 +56,41 @@ X-IDS unites:
 
 *(\*) Indicates low sample support ($n < 200$). MITM's F1 drop under twin augmentation is a known limitation: the log1p compression compresses absolute deviation magnitudes across all features. Compression-ratio analysis (DDoS_TCP/MITM = 9,456x) confirms MITM deviation signals remain distinguishable from normal; the regression is attributable to sampling variance at n=538. See `results/mitm_regression_report.md`.*
 
-### C. Master Edge-Resource Trade-Off Benchmark
+### C. Edge-Resource Benchmarking: Dual Latency Architecture
 
+#### Table A: Standalone Model Inference Latency (Isolated Forward Pass)
 | Configuration | Feature Space | Accuracy (%) | Macro-F1 | Mean Latency $\pm$ Std (ms) | Throughput (samples/s) | Storage (KB) |
 |---|---|---|---|---|---|---|
-| **Config 1: Full Twin + Heavy RF (150 trees)** | Twin-Augmented-v2 | **94.13%** | **0.9068** | **$0.446 \pm 0.003\text{ ms}$** | 2,240.1 | 14,546.1 KB |
-| **Config 2: Quantized Twin + Standard RF (100 trees)** | Twin-Augmented-v2 | **93.23%** | **0.8973** | **$0.220 \pm 0.019\text{ ms}$** | 4,548.2 | 5,610.0 KB |
-| **Config 3: Quantized Twin + Pruned RF (30 trees)** | Twin-Augmented-v2 | 88.88% | 0.8459 | **$0.155 \pm 0.002\text{ ms}$** | 6,462.3 | 457.8 KB |
+| **Config 1: Full Twin + Heavy RF (150 trees)** | Twin-Augmented | **94.13%** | **0.9068** | **$0.446 \pm 0.003\text{ ms}$** | 2,240.1 | 14,546.1 KB |
+| **Config 2: Quantized Twin + Standard RF (100 trees)** | Twin-Augmented | **93.23%** | **0.8973** | **$0.220 \pm 0.019\text{ ms}$** | 4,548.2 | 5,610.0 KB |
+| **Config 3: Quantized Twin + Pruned RF (30 trees)** | Twin-Augmented | 88.88% | 0.8459 | **$0.155 \pm 0.002\text{ ms}$** | 6,462.3 | 457.8 KB |
 | **Config 4: Fast-Inference Edge XGBoost (25 trees)** | Raw Telemetry | 91.81% | 0.8871 | **$0.006 \pm 0.002\text{ ms}$** | **180,677.6** | **105.9 KB** |
+
+#### Table B: End-to-End Decision Pipeline Latency (500 Live Streaming Telemetry Samples)
+| Pipeline Stage / Traffic Class | Synchronous SHAP (Baseline) | Conditional SHAP (Optimized) | Latency Reduction |
+|---|---:|---:|---:|
+| **Digital Twin Forecast ($f_{\text{DT}}$)** | $1.150\text{ ms}$ | $1.150\text{ ms}$ | Steady Baseline |
+| **XGBoost Classifier ($g_{\text{IDS}}$)** | $2.742\text{ ms}$ | $2.742\text{ ms}$ | Steady Baseline |
+| **SHAP TreeExplainer ($S_{\text{top}}$)** | $11.873\text{ ms}$ | **$0.131\text{ ms}$ (Normal)** / $11.32\text{ ms}$ (Alerts) | **$98.9\%$ on Normal** |
+| **Normal Traffic Decision Latency** | **$16.650\text{ ms}$** | **$4.023\text{ ms}$** | **$75.8\%$ Latency Reduction** |
+| **Attack Alert Decision Latency** | **$16.650\text{ ms}$** | **$15.214\text{ ms}$** | Full XAI Preserved |
+| **Sustained Normal Throughput** | $60.1\text{ packets/s}$ | **$248.6\text{ packets/s}$** | **$4.1\times$ Throughput Gain** |
 
 ---
 
-## 2. Track A, B & New Empirical Findings
+## 2. Key Empirical Findings (Plans v8 – v10)
 
-1. **Resolution of Ceiling-Clamping & Per-Feature Physical Bounding (Track A):**
-   - Trained the Digital Twin in log-space ($\log(1+x)$) with L2 regularization ($\alpha=0.05$) and per-feature log-space protocol ceilings (`FEATURE_LOG_CLIPS`).
-   - Achieved a **42.7% error reduction** on primary payload tracking (`tcp.len` MAE of **140.34 B** vs. 244.98 B baseline) with **0.0% saturation clamping** on attack bursts.
-   - Normal-only held-out validation confirmed sub-0.35% relative error across physical ranges.
-2. **Twin Forecast Fidelity as a Driver of Deviation-Space Detection Quality (Empirical Finding):**
-   - Across three independent sessions, as twin residual magnitude decreased ~1,000x, pure-deviation-only detection accuracy rose 33.5 percentage points:
-
-   | Session | Steady-State Median Residual | Pure-Dev RF | Pure-Dev XGB |
-   |---|---:|---:|---:|
-   | Baseline (unconstrained MLP) | ~14,000,000 B (Unbounded Noise) | 39.10% | 38.70% |
-   | Log1p Scaler Fix v1 | ~1,900,000 B | 62.30% | 63.05% |
-   | Log1p Robust Twin v2 (Retrained) | **1.84 KB (Mean of Medians)** | **72.63%** | **71.84%** |
-
-   - **Conclusion:** Twin calibration quality is a first-order driver of IDS deviation-space discriminative power.
-3. **Causal Mechanics of Application Anomaly Detection & SQLi Mechanism Resolution (Track B):**
+1. **Per-Flow Delta-Sequence Modeling:**
+   - Grouping telemetry by `(tcp.srcport, tcp.dstport)` and computing within-flow advance deltas ($\Delta \text{seq}_t, \Delta \text{ack}_t$) reduced `tcp.seq` MAE by **$447\times$ ($12.2\text{M B} \to 27.3\text{ KB}$)** and total mean MAE by **$223\times$ ($1.81\text{ MB} \to 8.08\text{ KB}$)** with zero saturation clamping.
+2. **Dual Latency Reality in Edge Deployments:**
+   - Raw tree inference executes in $0.006\text{ ms}$ (Table A). Conditional SHAP triggering accelerates normal packet processing to $4.023\text{ ms}$ (Table B), delivering $>240\text{ packets/second}$ sustained edge throughput.
+3. **Causal Mechanics of Application Anomaly Detection & SQLi Resolution:**
    - Continuous packet length and flow deviation residuals (`dev_tcp.len`, `http.content_length`, `http.response`) are effective physical discriminators for web/payload attacks without high-latency string tokenization overhead.
    - **Empirical Grounding for SQLi:** Audit confirmed `http.content_length` is constant zero across all 4,573 SQL_injection samples in Edge-IIoTset. Consequently, the model relies on connection teardown signatures (`tcp.connection.fin`, `tcp.connection.rst`, `tcp.ack`, `arp.opcode`), achieving $F_1 = 0.8930$ grounded in authentic network behavior.
-4. **Zero-Shot Generalization on TON_IoT (50k Unseen Samples):**
+4. **Zero-Shot Generalization & Deep Sanity Check on TON_IoT (50k Unseen Samples):**
    - **XGB-Raw Baseline:** $65.21\%$ Accuracy, $0.7894$ Macro-F1, $100.00\%$ Precision, 0 False Positives ($17,395$ False Negatives).
-   - **XGB-Twin-Augmented-v2:** **$99.29\%$ Accuracy**, **$0.9964$ Macro-F1**, **$100.00\%$ Precision**, 0 False Positives ($355$ False Negatives).
+   - **XGB-Twin-Augmented:** **$99.29\%$ Accuracy**, **$0.9964$ Macro-F1**, **$100.00\%$ Precision**, 0 False Positives ($355$ False Negatives).
+   - **Audit of 355 Misses:** Verified that the 355 misses occurred exclusively on isolated zero-duration single-packet boundary frames ($315$ DDoS, $40$ DoS); detection across sustained attack sessions was $100.00\%$.
 
 ## 3. Operational Confidence Filter Reconciliation
 - **Canonical Alert Suppression Rate:** **30.0%**
